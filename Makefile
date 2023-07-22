@@ -8,7 +8,7 @@ LFLAGS=-L. -lfmc -lm
 LIB=libfmc.a
 
 HEADERS=ctable.h
-OBJECTS=ctable.o ctable2.o
+OBJECTS=ctable.o
 TESTS=t_example.run
 
 all: $(LIB) test
