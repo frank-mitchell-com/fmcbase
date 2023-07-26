@@ -87,21 +87,25 @@ static void table_add() {
 
     C_Userdata_set_string(&key, "key");
     C_Userdata_set_string(&value, "value");
-    C_Userdata_clear(&actual, false);
-
-    lequal(C_Table_has(t, &key), false);
-
-    lok(C_Table_add(t, &key, &value));
-
-    lok(C_Table_has(t, &key));
-    lok(C_Table_get(t, &key, &actual));
-
-    lsequal(tostr(value), tostr(actual));
-
     C_Userdata_set_string(&value2, "value2");
 
+    // Check key not in table
+    lequal(C_Table_has(t, &key), false);
+
+    // ADD key = value
+    lok(C_Table_add(t, &key, &value));
+
+    // Check key = value in table
+    C_Userdata_clear(&actual, false);
+    lok(C_Table_get(t, &key, &actual));
+    lsequal(tostr(value), tostr(actual));
+
+    // Try to add the key again
     lequal(C_Table_add(t, &key, &value2), false);
 
+    // Check key = value in table
+    C_Userdata_clear(&actual, false);
+    lok(C_Table_get(t, &key, &actual));
     lsequal(tostr(value), tostr(actual));
 
     teardown();
@@ -114,23 +118,24 @@ static void table_put() {
 
     C_Userdata_set_string(&key, "key");
     C_Userdata_set_string(&value, "value");
-    C_Userdata_clear(&actual, false);
-
-    lequal(C_Table_has(t, &key), false);
-
-    lok(C_Table_put(t, &key, &value));
-
-    lok(C_Table_has(t, &key));
-    lok(C_Table_get(t, &key, &actual));
-
-    lsequal(tostr(value), tostr(actual));
-
     C_Userdata_set_string(&value2, "value2");
 
+    // Check key not in table
+    lequal(C_Table_has(t, &key), false);
+
+    // PUT key = value
+    lok(C_Table_put(t, &key, &value));
+
+    // Check key = value
+    C_Userdata_clear(&actual, false);
+    lok(C_Table_get(t, &key, &actual));
+    lsequal(tostr(value), tostr(actual));
+
+    // PUT key = value2
     lok(C_Table_put(t, &key, &value2));
 
-    // mysterious failure
-    lok(C_Table_has(t, &key));
+    // Check key = value2
+    C_Userdata_clear(&actual, false);
     lok(C_Table_get(t, &key, &actual));
     lsequal(tostr(value2), tostr(actual));
 
