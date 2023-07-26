@@ -1,32 +1,36 @@
 # Makefile for Frank Mitchell's C library
 
+#CC=gcc
 CC=clang
-#CC=tcc
-CFLAGS=-c -Wall
-LFLAGS=-L. -lfmc -lm
+LIBNAME=ctable
+CFLAGS=-Wall -fPIC
+LFLAGS=-L. -l$(LIBNAME) -lm
 
-LIB=libfmc.a
+LIB=lib$(LIBNAME).a
+SHLIB=lib$(LIBNAME).so
 
-HEADERS=ctable.h
-OBJECTS=ctable.o
-TESTS=t_example.run
+HEADERS=ctable.h csymbol.h cconv.h
+OBJECTS=ctable.o csymbol.o cconv.o
+TESTS=t_table.run
+
+.PHONY: all clean test
 
 all: $(LIB) test
 
 test: $(TESTS)
 
-%.run: %.c $(LIB) $(HEADERS)
-	$(CC) $(LFLAGS) -o $@ $<
-	./$@
+%.run: %.c $(LIB) $(SHLIB) $(HEADERS)
+	$(CC) -static -g -O0 -o $@ $< $(LFLAGS)
+
+$(SHLIB): $(OBJECTS)
+	$(CC) -shared -Wl,-soname,$(SHLIB) -o $(SHLIB) $<
 
 $(LIB): $(OBJECTS)
-	ar -rc $(LIB) $(OBJECTS)
+	ar rcs $(LIB) $^ 
 
 %.o: %.c $(HEADERS)
-	$(CC) $(CFLAGS) $<
-
-.PHONY: clean test
+	$(CC) -c $(CFLAGS) $<
 
 clean:
-	rm -rf *.o *.a *.run
+	rm -rf *.o *.a *.so *.run
 
