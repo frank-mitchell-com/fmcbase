@@ -3,7 +3,7 @@
 #CC=gcc
 CC=clang
 LIBNAME=ctable
-CFLAGS=-Wall -fPIC
+CFLAGS=-g -Wall -fPIC
 LFLAGS=-L. -l$(LIBNAME) -lm
 
 LIB=lib$(LIBNAME).a
@@ -11,7 +11,7 @@ SHLIB=lib$(LIBNAME).so
 
 HEADERS=ctable.h csymbol.h cconv.h
 OBJECTS=ctable.o csymbol.o cconv.o
-TESTS=t_table.run
+TESTS=t_table.run t_symbol.run
 
 .PHONY: all clean test
 

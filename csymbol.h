@@ -68,16 +68,19 @@ bool C_Symbol_for_cstring(C_Symbol* *symptr, const char* cstr);
 bool C_Symbol_for_utf8_string(C_Symbol* *symptr, size_t len, const uint8_t* uptr);
 
 /**
- * Notify the system that the caller intends to keep a reference to the
- * given symbol.  This procedure increments the reference count to `sym`.
+ * The number of references to this symbol, assuming proper reference counting
+ * discipline.
+ */
+int C_Symbol_references(C_Symbol* sym);
+
+/**
+ * Increments the reference count to `sym`.
  * Returns the argument, for convenience.
  */
 C_Symbol* C_Symbol_retain(C_Symbol* sym);
 
 /**
- * Notify the system that the caller will no longer keep a reference to
- * the symbol contained in `*symptr`.
- * This procedure decrements the reference count to the symbol and
+ * Decrements the reference count to the symbol and
  * sets the contents of `*symptr` to NULL.
  */
 void C_Symbol_release(C_Symbol* *symptr);

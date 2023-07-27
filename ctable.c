@@ -125,6 +125,27 @@ extern void C_Table_new(C_Table* *tptr, size_t minsz) {
     (*tptr) = t;
 }
 
+static bool udcopy(C_Table* t, C_Userdata* to, const C_Userdata* from) {
+    if (from->len == 0 || from->ptr == NULL) {
+        to->tag = from->tag;
+        to->len = 0;
+        to->ptr = from->ptr;
+        return true;
+    } else {
+        return t->cp(to, from);
+    }
+}
+
+static void udfree(C_Table* t, C_Userdata* ud) {
+    if (ud->len == 0 || ud->ptr == NULL) {
+        ud->tag = 0;
+        ud->len = 0;
+        ud->ptr = NULL;
+    } else {
+        t->rm(ud);
+    }
+}
+
 extern void C_Table_free(C_Table* *tptr) {
     C_Table* t;
 
@@ -141,8 +162,8 @@ extern void C_Table_free(C_Table* *tptr) {
             head = head->next;
 
             // free all keys and values
-            t->rm(&(prev->key));
-            t->rm(&(prev->value));
+            udfree(t, &(prev->key));
+            udfree(t, &(prev->value));
 
             free(prev);
         }
@@ -185,8 +206,8 @@ static bool insert_entry(C_Table* t, const C_Userdata* key, const C_Userdata* va
 
     C_Table_Entry* entry = (C_Table_Entry*)malloc(sizeof(C_Table_Entry));
 
-    t->cp(&(entry->key), key);
-    t->cp(&(entry->value), value);
+    udcopy(t, &(entry->key), key);
+    udcopy(t, &(entry->value), value);
 
     entry->next = t->array[index];
     t->array[index] = entry;
@@ -198,12 +219,12 @@ static bool update_entry(C_Table* t, C_Table_Entry* entry, const C_Userdata* val
     C_Userdata* entval = &(entry->value);
     C_Userdata newval;
 
-    t->cp(&newval, value);
+    udcopy(t, &newval, value);
     if (!(t->eq(&newval, value))) {
-        t->rm(&newval);
+        udfree(t, &newval);
         return false;
     }
-    t->rm(entval);
+    udfree(t, entval);
 
     //C_Userdata_set(entval, newval.tag, newval.len, newval.ptr);
     entry->value.tag = newval.tag;
@@ -276,8 +297,8 @@ extern bool C_Table_remove(C_Table* t, const C_Userdata* key) {
         t->array[index] = entry->next;
     }
 
-    t->rm(&(entry->key));
-    t->rm(&(entry->value));
+    udfree(t, &(entry->key));
+    udfree(t, &(entry->value));
 
     return true;
 }
@@ -318,9 +339,8 @@ extern void C_Userdata_set_pointer(C_Userdata* ud, const void* ref) {
     ud->ptr = (void*)ref;
 }
 
-void C_Userdata_set_value(C_Userdata* ud, const void* ptr, size_t len) {
+extern void C_Userdata_set_value(C_Userdata* ud, const void* ptr, size_t len) {
     ud->tag = DEFAULT_TAG;
     ud->len = len;
     ud->ptr = (void*)ptr;
 }
-

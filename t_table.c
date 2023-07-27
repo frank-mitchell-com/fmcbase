@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "minctest.h"
 #include "ctable.h"
 
@@ -38,9 +39,9 @@ static const char* tostr(C_Userdata ud) {
     result = calloc(50 + ud.len, sizeof(char));
 
     if (ud.len == 0 || ud.ptr == NULL) {
-        sprintf(result, "{%d,%ld,%p},", ud.tag, ud.len, ud.ptr);
+        sprintf(result, "{tag=%d,len=%ld,ptr=%p}", ud.tag, ud.len, ud.ptr);
     } else {
-        sprintf(result, "{%d,%ld,\"%s\"}", ud.tag, ud.len, (char*)ud.ptr);
+        sprintf(result, "{tag=%d,len=%ld,ptr=\"%*s\"}", ud.tag, ud.len, (int)ud.len, (char*)ud.ptr);
     }
     return result;
 }
@@ -111,6 +112,61 @@ static void table_add() {
     teardown();
 }
 
+static void table_with_pointer_key() {
+    char *data = (char *)calloc(50, sizeof(char));
+
+    C_Userdata key, value, actual;
+
+    setup();
+
+    strcpy(data, "this is my data");
+
+    C_Userdata_set_pointer(&key, data);
+    C_Userdata_set_string(&value, "value");
+
+    // Check key not in table
+    lequal(C_Table_has(t, &key), false);
+
+    // ADD key = value
+    lok(C_Table_add(t, &key, &value));
+
+    // Check key in table
+    lequal(C_Table_has(t, &key), true);
+
+    strcpy(data, "still my data");
+
+    // Check key still in table even though contents changed
+    // i.e. stored by reference, not value.
+    lequal(C_Table_has(t, &key), true);
+
+    teardown();
+}
+
+static void table_with_pointer_value() {
+    const char *data = strdup("this is my data");
+
+    C_Userdata key, value, actual;
+
+    setup();
+
+    C_Userdata_set_string(&key, "key");
+    C_Userdata_set_pointer(&value, data);
+
+    // Check key not in table
+    lequal(C_Table_has(t, &key), false);
+
+    // ADD key = value
+    lok(C_Table_add(t, &key, &value));
+
+    // Check key = value in table
+    C_Userdata_clear(&actual, false);
+    lok(C_Table_get(t, &key, &actual));
+    lsequal(tostr(value), tostr(actual));
+    lok(data == actual.ptr);
+
+    teardown();
+}
+
 static void table_put() {
     C_Userdata key, value, value2, actual;
 
@@ -174,6 +230,8 @@ int main (int argc, char* argv[]) {
     lrun("table_add", table_add);
     lrun("table_put", table_put);
     lrun("table_remove", table_remove);
+    lrun("table_with_pointer_key", table_with_pointer_key);
+    lrun("table_with_pointer_value", table_with_pointer_value);
     lresults();
     return lfails != 0;
 }
