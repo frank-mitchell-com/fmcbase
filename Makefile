@@ -2,25 +2,33 @@
 
 #CC=gcc
 CC=clang
+
 LIBNAME=ctable
+
+SRCDIR=.
+OBJDIR=.
+LIBDIR=.
+TESTDIR=test
+
+LIB=$(LIBDIR)/lib$(LIBNAME).a
+SHLIB=$(LIBDIR)/lib$(LIBNAME).so
+
 CFLAGS=-g -Wall -fPIC
-LFLAGS=-L. -l$(LIBNAME) -lm
+LFLAGS=-L$(LIBDIR) -l$(LIBNAME) -lm
 
-LIB=lib$(LIBNAME).a
-SHLIB=lib$(LIBNAME).so
+HEADERS=$(wildcard $(SRCDIR)/*.h)
+OBJECTS=$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/*.c))
+TESTS=$(patsubst %.c,%.run,$(wildcard $(TESTDIR)/*.c))
 
-HEADERS=ctable.h csymbol.h cconv.h
-OBJECTS=ctable.o csymbol.o cconv.o
-TESTS=t_table.run t_symbol.run
-
-.PHONY: all clean test
+.PHONY: all clean test runtest
 
 all: $(LIB) test
 
 test: $(TESTS)
 
-%.run: %.c $(LIB) $(SHLIB) $(HEADERS)
-	$(CC) -static -g -O0 -o $@ $< $(LFLAGS)
+%.run: %.c $(LIB) $(HEADERS)
+	$(CC) -static -g -O0 -I $(SRCDIR) -I $(TESTDIR) -o $@ $< $(LFLAGS)
+	-./$@
 
 $(SHLIB): $(OBJECTS)
 	$(CC) -shared -Wl,-soname,$(SHLIB) -o $(SHLIB) $<
@@ -29,8 +37,9 @@ $(LIB): $(OBJECTS)
 	ar rcs $(LIB) $^ 
 
 %.o: %.c $(HEADERS)
-	$(CC) -c $(CFLAGS) $<
+	$(CC) -c $(CFLAGS) -o $@ $<
 
 clean:
-	rm -rf *.o *.a *.so *.run
+	rm -rf $(OBJDIR)/*.o $(LIBDIR)/*.a $(LIBDIR)/*.so $(TESTDIR)/*.run
+
 

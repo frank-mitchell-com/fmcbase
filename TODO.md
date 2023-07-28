@@ -3,16 +3,49 @@
 - common header
 - reference table (read write lock)
 - string table (read write lock)
-- C_Conv
-- C_Port
-- U_String
+- `U_String`
 
-### TypeLib / ExpObj
+## PENDING IMPLEMENTATION
 
-- E_Any
-- E_String (<- U_String)
-- M_Pool
-- M_String (<- U_String)
+- `C_Conv`
+- `C_Port`
+- `C_Table`
+
+## PENDING TESTING
+
+- `C_Symbol`
+- `C_Table`
+
+## COMPILATION
+
+- Other Thread Models (compilation switches)
+  - no threads
+  - Windows Threads
+  - Netscape Common Runtime
+  - Apache Common Runtime
+
+- Namespaces?
+
+- Common API Marker
+  - extern or DLL stuff
+
+- `C_Writer`, `C_Reader` prototypes?
+
+---
+
+## TYPElIB / EXPOBJ
+
+- datatypes
+- unignorable error codes? -> exceptions?
+
+### Pending Final Design
+
+- `E_Any`
+- `E_String` (<- `U_String`)
+- `M_Pool`
+- `M_String` (<- `U_String`)
+
+### Pending Design / XTIDL
 
 - Basic Types
   - any
@@ -46,32 +79,3 @@
     - map, sorted
     - queue
 
-## PENDING IMPLEMENTATION
-
-- C_Table
-
-## PENDING TESTING
-
-- C_Symbol
-- C_Table
-
-## COMPILATION
-
-- Other Thread Models (compilation switches)
-  - no threads
-  - Windows Threads
-  - Netscape Common Runtime
-  - Apache Common Runtime
-
-- Namespaces?
-
-- Common API Marker
-  - extern or DLL stuff
-
-- C_Writer, C_Reader prototypes?
-
-### TypeLib / ExpObj
-
-- datatypes
-- unignorable error codes? -> exceptions?
-- 
