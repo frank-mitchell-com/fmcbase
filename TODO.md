@@ -3,17 +3,37 @@
 - common header
 - reference table (read write lock)
 - string table (read write lock)
-- `U_String`
 
 ## PENDING IMPLEMENTATION
 
 - `C_Conv`
+   - UTF-x to y conversion
+   - Invalid encoding detection & signalling
+
 - `C_Port`
+
+- `C_Symbol`
+   - table lock
+
 - `C_Table`
+   - resizing
+   - iterator
+   - custom hash function
+   - custom equal, copy, delete
+   - collision metrics
+   - look for memory leaks
+
+- `U_String`
+
+- `U_Char_Buffer`
+
+- `U_String_Array`
 
 ## PENDING TESTING
 
-- `C_Symbol`
+- `C_Conv`
+  - Check endianness of UTF-16 and UTF-32
+
 - `C_Table`
 
 ## COMPILATION
@@ -26,10 +46,12 @@
 
 - Namespaces?
 
+- Alternate memory allocation?
+  - Thread local
+  - "M-Pool" (eventually)
+
 - Common API Marker
   - extern or DLL stuff
-
-- `C_Writer`, `C_Reader` prototypes?
 
 ---
 

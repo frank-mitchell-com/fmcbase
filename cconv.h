@@ -26,48 +26,35 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <wchar.h>
 
-bool C_Conv_is_ascii(size_t sz, uint8_t* buf);
+#define UTF_8   "UTF-8"
+#define UTF_32  "UTF-32"
 
-size_t C_Conv_utf8_to_16_length(size_t sz, uint8_t* buf, size_t *csz);
+typedef uint16_t utf16_t;
 
-size_t C_Conv_utf8_to_32_length(size_t sz, uint8_t* buf, size_t *csz);
+bool C_Conv_is_ascii(size_t sz, const char* buf);
 
-size_t C_Conv_utf16_to_8_length(size_t sz, uint16_t* buf, size_t *csz);
+size_t C_Conv_utf8_to_16_length(size_t sz, const char* buf, size_t *csz);
 
-size_t C_Conv_utf32_to_8_length(size_t sz, uint32_t* buf, size_t *csz);
+size_t C_Conv_utf8_to_32_length(size_t sz, const char* buf, size_t *csz);
 
-size_t C_Conv_utf8_to_16(size_t insz, uint8_t* inbuf, 
-                        size_t outsz, uint16_t* outbuf);
+size_t C_Conv_utf16_to_8_length(size_t sz, const utf16_t* buf, size_t *csz);
 
-size_t C_Conv_utf8_to_32(size_t insz, uint8_t* inbuf, 
-                        size_t outsz, uint32_t* outbuf);
+size_t C_Conv_utf32_to_8_length(size_t sz, const wchar_t* buf, size_t *csz);
 
-size_t C_Conv_utf16_to_8(size_t insz, uint16_t* inbuf, 
-                        size_t outsz, uint8_t* outbuf);
+size_t C_Conv_utf8_to_16(size_t insz, const char* inbuf, size_t outsz, utf16_t* outbuf);
 
-size_t C_Conv_utf32_to_8(size_t insz, uint32_t* inbuf,
-                        size_t outsz, uint8_t* outbuf);
+size_t C_Conv_utf8_to_32(size_t insz, const char* inbuf, size_t outsz, wchar_t* outbuf);
 
-ssize_t C_Conv_decode_utf8(const char* encoding,
-                            size_t insz, uint8_t* inbuf,
-                            size_t outsz, uint8_t* outbuf);
+size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz, char* outbuf);
 
-ssize_t C_Conv_decode_utf32(const char* encoding,
-                            size_t insz, uint8_t* inbuf,
-                            size_t outsz, uint32_t* outbuf);
+size_t C_Conv_utf32_to_8(size_t insz, const wchar_t* inbuf, size_t outsz, char* outbuf);
 
-ssize_t C_Conv_encode_utf8(const char* encoding,
-                            size_t insz, uint8_t* inbuf,
-                            size_t outsz, uint8_t* outbuf);
-
-ssize_t C_Conv_encode_utf32(const char* encoding,
-                            size_t insz, uint32_t* inbuf,
-                            size_t outsz, uint8_t* outbuf);
-
-ssize_t C_Conv_transcode(const char* incode, 
-                        const char* outcode,
-                        size_t insz, uint8_t* inbuf,
-                        size_t outsz, uint8_t* outbuf);
+/**
+ *
+ * Returns the number of bytes written to `outbuf`.
+ */
+ssize_t C_Conv_transcode(const char* incode, const char* outcode, size_t insz, char* inbuf, size_t outsz, char* outbuf, size_t* nread);
 
 #endif // CCONV_H_INCLUDED
