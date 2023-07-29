@@ -28,7 +28,7 @@ test: $(TESTS)
 
 %.run: %.c $(LIB) $(HEADERS)
 	$(CC) -static -g -O0 -I $(SRCDIR) -I $(TESTDIR) -o $@ $< $(LFLAGS)
-	-./$@
+	./$@
 
 $(SHLIB): $(OBJECTS)
 	$(CC) -shared -Wl,-soname,$(SHLIB) -o $(SHLIB) $<

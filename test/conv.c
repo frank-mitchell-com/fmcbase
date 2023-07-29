@@ -50,23 +50,26 @@ static void* stralloc(void* buf, size_t len, size_t csiz) {
     return result;
 }
 
+static int append_ascii(unsigned int c, char buf[], int j) {
+    int len = j;
+    if (c <= 0x7F) {
+        buf[j] = (char)c;
+        len += 1;
+    } else {
+        sprintf(&(buf[len]), "\\u{%x}", c); 
+        len = strlen(buf);
+    }
+    return len;
+}
+
 static const char* wcs2cstr(const wchar_t* wcs) {
     char buf[STRBUFSIZ];
     size_t wlen = wcslen(wcs);
     size_t len = 0;
 
     bzero(buf, STRBUFSIZ);
-    // len = sprintf(buf, "%ls", wcs);
     for (int i = 0; i < wlen; i++) {
-        wchar_t c = wcs[i];
-        if (c <= 0x7F) {
-            buf[len] = (char)c;
-            len += 1;
-        } else {
-            len = strlen(buf);
-            len += sprintf(&(buf[len]), "\\u{%x}", (int)c); 
-            len = strlen(buf);
-        }
+        len = append_ascii(wcs[i], buf, len);
     }
     return (char*)stralloc(buf, len, sizeof(char));
 }
@@ -85,17 +88,20 @@ static const char* jcs2cstr(const utf16_t* jcs) {
     size_t len = 0;
 
     bzero(buf, STRBUFSIZ);
-    // len = sprintf(buf, "%ls", wcs);
     for (int i = 0; i < jlen; i++) {
-        wchar_t c = jcs[i];
-        if (c <= 0x7F) {
-            buf[len] = (char)c;
-            len += 1;
-        } else {
-            len = strlen(buf);
-            len += sprintf(&(buf[len]), "\\u{%x}", (int)c); 
-            len = strlen(buf);
-        }
+        len = append_ascii(jcs[i], buf, len);
+    }
+    return (char*)stralloc(buf, len, sizeof(char));
+}
+
+static const char* utf2cstr(const char* utf8str) {
+    char buf[STRBUFSIZ];
+    size_t slen = strlen(utf8str);
+    size_t len = 0;
+
+    bzero(buf, STRBUFSIZ);
+    for (int i = 0; i < slen; i++) {
+        len = append_ascii(0xFF & utf8str[i], buf, len);
     }
     return (char*)stralloc(buf, len, sizeof(char));
 }
@@ -154,7 +160,7 @@ static void string_smoke() {
 static void conv_smoke() {
     char* inbuf = "a very simple problem";
     size_t insz = strlen(inbuf) + 1;
-    const wchar_t* expected = L"\ufeffa very simple problem";
+    const wchar_t* expect = L"\ufeffa very simple problem";
     size_t nread = 0;
     ssize_t nwrit = 0;
     int errcode;
@@ -167,8 +173,8 @@ static void conv_smoke() {
     lequal(0, errcode);
     lequal((int)insz, (int)nread);
     lequal(92, (int)nwrit);
-    lok(wcscmp(expected, (wchar_t*)outbuf) == 0);
-    lsequal(wcs2cstr(expected), wcs2cstr((wchar_t*)outbuf));
+    lok(wcscmp(expect, (wchar_t*)outbuf) == 0);
+    lsequal(wcs2cstr(expect), wcs2cstr((wchar_t*)outbuf));
 
     free_strings();
 }
@@ -178,10 +184,10 @@ static void conv_utf8_to_32() {
     char* inbuf = 
         "$ \xC2\xA3 \xD0\x98 \xE0\xA4\xB9 \xE2\x82\xAC \xED\x95\x9C \xF0\x90\x8D\x88";
     size_t insz = strlen(inbuf);
-    const wchar_t expected[] = { 
+    const wchar_t expect[] = { 
         L'$',       L' ', 0x000000A3, L' ', 0x00000418, L' ', 
         0x00000939, L' ', 0x000020AC, L' ', 0x0000D55C, L' ', 
-        0x00010348, 0x0 };
+        0x00010348, 0x0,  0x0,        0x0,  0x0,        0x0 };
     ssize_t result = 0;
     int errcode;
     const size_t outsz = STRBUFSIZ/4;
@@ -194,8 +200,8 @@ static void conv_utf8_to_32() {
 
     lequal(0, errcode);
     lequal(13, (int)result);
-    lok(wcscmp(expected, (wchar_t*)outbuf) == 0);
-    lsequal(wcs2cstr(expected), wcs2cstr((wchar_t*)outbuf));
+    lok(wcscmp(expect, (wchar_t*)outbuf) == 0);
+    lsequal(wcs2cstr(expect), wcs2cstr((wchar_t*)outbuf));
 
     free_strings();
 }
@@ -230,10 +236,11 @@ static void conv_utf8_to_16() {
     char* inbuf = 
         "$ \xC2\xA3 \xD0\x98 \xE0\xA4\xB9 \xE2\x82\xAC \xED\x95\x9C \xF0\x90\x8D\x88";
     size_t insz = strlen(inbuf);
-    const utf16_t expected[] = { 
+    const utf16_t expect[] = { 
         L'$',   L' ',   0x00A3, L' ', 0x0418, L' ', 
         0x0939, L' ',   0x20AC, L' ', 0xD55C, L' ', 
-        0xD800, 0xDF48, 0x0 };
+        0xD800, 0xDF48, 0x0,    0x0,  0x0,    0x0 };
+    const int expectsz = 14;
     ssize_t result = 0;
     int errcode;
     const size_t outsz = STRBUFSIZ/4;
@@ -245,8 +252,8 @@ static void conv_utf8_to_16() {
     errcode = errno;
 
     lequal(0, errcode);
-    lequal(13, (int)result);
-    lsequal(jcs2cstr(expected), jcs2cstr((utf16_t*)outbuf));
+    lequal(expectsz, (int)result);
+    lsequal(jcs2cstr(expect), jcs2cstr((utf16_t*)outbuf));
 
     free_strings();
 }
@@ -258,7 +265,7 @@ static void conv_utf16_to_8() {
     const utf16_t inbuf[] = { 
         L'$',   L' ',   0x00A3, L' ', 0x0418, L' ', 
         0x0939, L' ',   0x20AC, L' ', 0xD55C, L' ', 
-        0xD800, 0xDF48, 0x0 };
+        0xD800, 0xDF48, 0x0,    0x0,  0x0,    0x0 };
     const size_t insz = jcslen(inbuf);
     char outbuf[STRBUFSIZ];
     size_t result;
@@ -272,6 +279,63 @@ static void conv_utf16_to_8() {
     lequal(0, errcode);
     lequal(24, (int)result);
     lsequal(expect, outbuf);
+    lsequal(utf2cstr(expect), utf2cstr(outbuf));
+
+    free_strings();
+}
+
+static void conv_utf32_to_16() {
+    const wchar_t inbuf[] = { 
+        L'$',       L' ', 0x000000A3, L' ', 0x00000418, L' ', 
+        0x00000939, L' ', 0x000020AC, L' ', 0x0000D55C, L' ', 
+        0x00010348, 0x0,  0x0,        0x0,  0x0,        0x0 };
+    const int insz = 13;
+    const utf16_t expect[] = { 
+        L'$',   L' ',   0x00A3, L' ', 0x0418, L' ', 
+        0x0939, L' ',   0x20AC, L' ', 0xD55C, L' ', 
+        0xD800, 0xDF48, 0x0,    0x0,  0x0,    0x0 };
+    const int expectsz = 14;
+    utf16_t outbuf[STRBUFSIZ/2];
+    const int outsz = sizeof(outbuf);
+    size_t result;
+    int errcode;
+
+    bzero(outbuf, outsz);
+
+    result = C_Conv_utf32_to_16(insz, inbuf, outsz, outbuf);
+    errcode = errno;
+
+    lequal(0, errcode);
+    lequal(expectsz, (int)result);
+    lsequal(jcs2cstr(expect), jcs2cstr(outbuf));
+
+    free_strings();
+}
+
+static void conv_utf16_to_32() {
+    const wchar_t expect[] = { 
+        L'$',       L' ', 0x000000A3, L' ', 0x00000418, L' ', 
+        0x00000939, L' ', 0x000020AC, L' ', 0x0000D55C, L' ', 
+        0x00010348, 0x0,  0x0,        0x0,  0x0,        0x0 };
+    const int expectsz = 13;
+    const utf16_t inbuf[] = { 
+        L'$',   L' ',   0x00A3, L' ', 0x0418, L' ', 
+        0x0939, L' ',   0x20AC, L' ', 0xD55C, L' ', 
+        0xD800, 0xDF48, 0x0,    0x0,  0x0,    0x0 };
+    const int insz = 14;
+    wchar_t outbuf[STRBUFSIZ/4];
+    const int outsz = sizeof(outbuf);
+    size_t result;
+    int errcode;
+
+    bzero(outbuf, outsz);
+
+    result = C_Conv_utf16_to_32(insz, inbuf, outsz, outbuf);
+    errcode = errno;
+
+    lequal(0, errcode);
+    lequal(expectsz, (int)result);
+    lsequal(wcs2cstr(expect), wcs2cstr(outbuf));
 
     free_strings();
 }
@@ -289,6 +353,8 @@ int main (int argc, char* argv[]) {
     lrun("cconv_utf32_to_8", conv_utf32_to_8);
     lrun("cconv_utf8_to_16", conv_utf8_to_16);
     lrun("cconv_utf16_to_8", conv_utf16_to_8);
+    lrun("cconv_utf32_to_16", conv_utf32_to_16);
+    lrun("cconv_utf16_to_32", conv_utf16_to_32);
     lrun("test_code_smoke", string_smoke);
     lresults();
     return lfails != 0;

@@ -129,77 +129,72 @@ static bool has_conbytes(const char* buf, int i, size_t count, size_t max) {
     return true;
 }
 
-static int read_code_point(wchar_t* cpp, size_t insz, const char* inbuf, size_t i) {
-    int incr = 0;
-    wchar_t cp = 0;
-
+static int read_utf8(wchar_t* cpp, size_t insz, const char* inbuf, size_t i) {
     uint8_t c = OCTET(inbuf[i]);
     if (c <= 0x7F) {
-        cp = c;
-        incr = 1;
+        (*cpp) = c;
+        return 1;
     } else if (c >= 0xC0 && c < 0xE0 && has_conbytes(inbuf, i, 1, insz)) {
         uint32_t c2 = OCTET(inbuf[i+1]);
-        cp = (wchar_t)(((c & 0x1F) << 6) | (c2 & 0x3F));
-        incr = 2;
+        (*cpp) = (wchar_t)(((c & 0x1F) << 6) | (c2 & 0x3F));
+        return 2;
     } else if (c >= 0xE0 && c < 0xF0 && has_conbytes(inbuf, i, 2, insz)) {
         uint32_t c2 = OCTET(inbuf[i+1]);
         uint32_t c3 = OCTET(inbuf[i+2]);
-        cp = 
+        (*cpp) = 
             (wchar_t)(((c & 0x0F) << 12) | ((c2 & 0x3F) << 6) | (c3 & 0x3F));
-        incr = 3;
+        return 3;
     } else if (c >= 0xF0 && c < 0xF8 && has_conbytes(inbuf, i, 3, insz)) {
         uint32_t c2 = OCTET(inbuf[i+1]);
         uint32_t c3 = OCTET(inbuf[i+2]);
         uint32_t c4 = OCTET(inbuf[i+3]);
-        cp = (wchar_t)(((c & 0x07) << 18) 
+        (*cpp) = (wchar_t)(((c & 0x07) << 18) 
                         | ((c2 & 0x3F) << 12) 
                         | ((c3 & 0x3F) << 6) 
                         | (c4 & 0x3F));
-        incr = 4;
+        return 4;
     } else if (c >= 0xF8 && c < 0xFC && has_conbytes(inbuf, i, 4, insz)) {
         uint32_t c2 = OCTET(inbuf[i+1]);
         uint32_t c3 = OCTET(inbuf[i+2]);
         uint32_t c4 = OCTET(inbuf[i+3]);
         uint32_t c5 = OCTET(inbuf[i+4]);
-        cp = (wchar_t)(((c & 0x03) << 24) 
+        (*cpp) = (wchar_t)(((c & 0x03) << 24) 
                         | ((c2 & 0x3F) << 18) 
                         | ((c3 & 0x3F) << 12) 
                         | ((c4 & 0x3F) << 6)
                         | (c5 & 0x3F));
-        incr = 5;
+        return 5;
     } else if (c >= 0xFC && c < 0xFE && has_conbytes(inbuf, i, 5, insz)) {
         uint32_t c2 = OCTET(inbuf[i+1]);
         uint32_t c3 = OCTET(inbuf[i+2]);
         uint32_t c4 = OCTET(inbuf[i+3]);
         uint32_t c5 = OCTET(inbuf[i+4]);
         uint32_t c6 = OCTET(inbuf[i+5]);
-        cp = (wchar_t)(((c & 0x03) << 30) 
+        (*cpp) = (wchar_t)(((c & 0x03) << 30) 
                         | ((c2 & 0x3F) << 24) 
                         | ((c3 & 0x3F) << 28) 
                         | ((c4 & 0x3F) << 12)
                         | ((c5 & 0x3F) << 6)
                         | (c6 & 0x3F));
-        incr = 6;
+        return 6;
     }
-    if (cpp) (*cpp) = cp;
-    return incr;
+    // TODO: Set errno
+    return 0;
 }
 
-static int write_code_point(wchar_t cp, size_t outsz, char* outbuf, size_t j) {
-    int incr = 0;
-
+static int write_utf8(wchar_t cp, size_t outsz, char* outbuf, size_t j) {
     if (cp <= 0x7f) {
         outbuf[j] = cp;
-        incr = 1;
+        return 1;
     } else if (cp <= 0x7ff && j+2 < outsz) {
         outbuf[j + 0] = (uint8_t) (0xC0 | (0x1F & (cp >> 6)));
         outbuf[j + 1] = (uint8_t) (0x80 | (0x3F & cp));
-        incr = 2;
+        return 2;
     } else if (cp <= 0xffff && j+3 < outsz) {
         outbuf[j + 0] = (uint8_t) (0xE0 | (0x0F & (cp >> 12)));
         outbuf[j + 1] = (uint8_t) (0x80 | (0x3F & (cp >> 6)));
         outbuf[j + 2] = (uint8_t) (0x80 | (0x3F & cp));
-        incr = 3;
+        return 3;
     } else if (cp <= 0x1fffff && j+4 < outsz) {
         // Anything above 0x10ffff not defined by the Unicode Standard 
         // ... yet.
@@ -207,14 +202,14 @@ static int write_code_point(wchar_t cp, size_t outsz, char* outbuf, size_t j) {
         outbuf[j + 1] = (uint8_t) (0x80 | (0x3F & (cp >> 12)));
         outbuf[j + 2] = (uint8_t) (0x80 | (0x3F & (cp >> 6)));
         outbuf[j + 3] = (uint8_t) (0x80 | (0x3F & cp));
-        incr = 4;
+        return 4;
     } else if (cp <= 0x3fffff && j+5 < outsz) {
         outbuf[j + 0] = (uint8_t) (0xF8 | (0x03 & (cp >> 24)));
         outbuf[j + 1] = (uint8_t) (0x80 | (0x3F & (cp >> 18)));
         outbuf[j + 2] = (uint8_t) (0x80 | (0x3F & (cp >> 12)));
         outbuf[j + 3] = (uint8_t) (0x80 | (0x3F & (cp >> 6)));
         outbuf[j + 4] = (uint8_t) (0x80 | (0x3F & cp));
-        incr = 5;
+        return 5;
     } else if (cp <= 0x7fffff && j+6 < outsz) {
         outbuf[j + 0] = (uint8_t) (0xFC | (0x01 & (cp >> 24)));
         outbuf[j + 1] = (uint8_t) (0x80 | (0x3F & (cp >> 18)));
@@ -222,9 +217,10 @@ static int write_code_point(wchar_t cp, size_t outsz, char* outbuf, size_t j) {
         outbuf[j + 3] = (uint8_t) (0x80 | (0x3F & (cp >> 6)));
         outbuf[j + 4] = (uint8_t) (0x80 | (0x3F & (cp >> 6)));
         outbuf[j + 5] = (uint8_t) (0x80 | (0x3F & cp));
-        incr = 6;
+        return 6;
     }
-    return incr;
+    // TODO: Set errno?
+    return 0;
 }
 
 extern size_t C_Conv_utf8_to_32(size_t insz, const char* inbuf, size_t outsz, wchar_t* outbuf) {
@@ -232,15 +228,14 @@ extern size_t C_Conv_utf8_to_32(size_t insz, const char* inbuf, size_t outsz, wc
     size_t j;
     for (j = 0; i < insz && j < outsz; j++) {
         wchar_t cp = 0;
-        int incr = read_code_point(&cp, insz, inbuf, i);
+        int inci = read_utf8(&cp, insz, inbuf, i);
 
-        if (incr <= 0) {
-            // TODO: Set errno?
+        if (inci <= 0) {
             break;
         }
+        i += inci;
 
         outbuf[j] = cp;
-        i += incr;
     }
     return j;
 }
@@ -258,67 +253,123 @@ static bool is_surrogate(utf16_t v) {
 }
 
 static utf16_t high_surrogate(wchar_t v) {
-    return ((0x10FFFF & v) >> 10) + 0xD800;
+    return ((v - 0x10000) >> 10) + 0xD800;
 }
 
 static utf16_t low_surrogate(wchar_t v) {
-    return (0x3FF & v) + 0xDC00;
+    return (v - 0x10000) + 0xDC00;
 }
 
 static wchar_t surrogate_pair(utf16_t high, utf16_t low) {
-    return (wchar_t)0x100000 + ((0x3FF & high) << 10) + (low & 0x3FF);
+    return (wchar_t)0x10000 
+                + (((high - 0xD800) << 10)) 
+                + ((low - 0xDC00));
+}
+
+static int read_utf16(wchar_t *cpp, size_t insz, const utf16_t* inbuf, size_t i) {
+    wchar_t cp = inbuf[i];
+    if (!is_surrogate(cp)) {
+        (*cpp) = cp;
+        return 1;
+    } else {
+        wchar_t cp2 = inbuf[i+1];
+        if (is_high_surrogate(cp) && is_low_surrogate(cp2)) {
+            (*cpp) = surrogate_pair(cp, cp2);
+            return 2;
+        } else if (is_high_surrogate(cp2) && is_low_surrogate(cp)) {
+            (*cpp) = surrogate_pair(cp2, cp);
+            return 2;
+        } else {
+            // TODO: Set errno?
+            return 0;
+        }
+    }
+}
+
+static int write_utf16(wchar_t cp, size_t outsz, utf16_t* outbuf, size_t j) {
+    if (cp <= 0xFFFF) {
+        outbuf[j] = cp;
+        return 1;
+    } else if (j+1 < outsz) {
+        outbuf[j]   = high_surrogate(cp);
+        outbuf[j+1] = low_surrogate(cp);
+        return 2;
+    } else {
+        // TODO: Set errno?
+        return 0;
+    }
 }
 
 extern size_t C_Conv_utf8_to_16(size_t insz, const char* inbuf, size_t outsz, utf16_t* outbuf) {
-    size_t i = 0;
-    size_t j;
-    for (j = 0; i < insz && j < outsz; j++) {
+    int i = 0;
+    int j = 0;
+    while (i < insz && j < outsz) {
         wchar_t cp = 0;
-        int incr = read_code_point(&cp, insz, inbuf, i);
+        int inci, incj;
 
-        if (incr <= 0) {
-            // TODO: Set errno?
+        inci = read_utf8(&cp, insz, inbuf, i);
+        if (inci <= 0) {
             break;
         }
+        i += inci;
 
-        i += incr;
-
-        if (cp <= 0xFFFF) {
-            outbuf[j] = cp;
-        } else if (j+1 < outsz) {
-            outbuf[j]   = high_surrogate(cp);
-            outbuf[j+1] = low_surrogate(cp);
-        } else {
+        incj = write_utf16(cp, outsz, outbuf, j);
+        if (incj <= 0) {
             break;
         }
+        j += incj;
     }
     return j;
 }
 
 extern size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz, char* outbuf) {
-    size_t i;
-    size_t j = 0;
-    for (i = 0; i < insz && j < outsz; i++) {
-        int incr;
-        wchar_t cp = inbuf[i];
+    int i = 0;
+    int j = 0;
+    while (i < insz && j < outsz) {
+        wchar_t cp;
+        int inci, incj;
 
-        if (is_surrogate(cp)) {
-            wchar_t cp2 = inbuf[i+1];
-            if (is_high_surrogate(cp) && is_low_surrogate(cp2)) {
-                cp = surrogate_pair(cp, cp2);
-            } else if (is_high_surrogate(cp2) && is_low_surrogate(cp)) {
-                cp = surrogate_pair(cp2, cp);
-            } else {
-                break;
-            }
-        }
-
-        incr = write_code_point(cp, outsz, outbuf, j);
-
-        if (incr <= 0) {
+        inci = read_utf16(&cp, insz, inbuf, i);
+        if (inci <= 0) {
             break;
         }
-        j += incr;
+        i += inci;
+
+        incj = write_utf8(cp, outsz, outbuf, j);
+        if (incj <= 0) {
+            break;
+        }
+        j += incj;
+    }
+    return j;
+}
+
+extern size_t C_Conv_utf32_to_16(size_t insz, const wchar_t* inbuf, size_t outsz, utf16_t* outbuf) {
+    int j = 0;
+    for (int i = 0; i < insz && j < outsz; i++) {
+        int incj = write_utf16(inbuf[i], outsz, outbuf, j);
+
+        if (incj <= 0) {
+            break;
+        }
+        j += incj;
+    }
+    return j;
+}
+
+extern size_t C_Conv_utf16_to_32(size_t insz, const utf16_t* inbuf, size_t outsz, wchar_t* outbuf) {
+    int i = 0;
+    int j = 0;
+    for (j = 0; i < insz && j < outsz; j++) {
+        wchar_t cp;
+        int inci = read_utf16(&cp, insz, inbuf, i);
+
+        if (inci <= 0) {
+            break;
+        }
+        i += inci;
+
+        outbuf[j] = cp;
     }
     return j;
 }
@@ -327,13 +378,12 @@ extern size_t C_Conv_utf32_to_8(size_t insz, const wchar_t* inbuf, size_t outsz,
     size_t i;
     size_t j = 0;
     for (i = 0; i < insz && j < outsz; i++) {
-        int incr = write_code_point(inbuf[i], outsz, outbuf, j);
+        int incj = write_utf8(inbuf[i], outsz, outbuf, j);
 
-        if (incr <= 0) {
-            // TODO: Set errno?
+        if (incj <= 0) {
             break;
         }
-        j += incr;
+        j += incj;
     }
     return j;
 }

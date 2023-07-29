@@ -49,7 +49,11 @@ size_t C_Conv_utf8_to_32(size_t insz, const char* inbuf, size_t outsz, wchar_t* 
 
 size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz, char* outbuf);
 
+size_t C_Conv_utf16_to_32(size_t insz, const utf16_t* inbuf, size_t outsz, wchar_t* outbuf);
+
 size_t C_Conv_utf32_to_8(size_t insz, const wchar_t* inbuf, size_t outsz, char* outbuf);
+
+size_t C_Conv_utf32_to_16(size_t insz, const wchar_t* inbuf, size_t outsz, utf16_t* outbuf);
 
 /**
  *
