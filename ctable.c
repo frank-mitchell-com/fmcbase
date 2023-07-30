@@ -23,9 +23,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <stdio.h>
 #include "ctable.h"
 
 #define TABLE_MINSIZ    5
+#define TABLE_LOAD      0.75
 
 typedef struct _C_Table_Entry C_Table_Entry;
 
@@ -53,23 +55,11 @@ static uint64_t default_hash(const void* ptr, const size_t len) {
 }
 
 static bool default_equals(const C_Userdata* a, const C_Userdata* b) {
-    unsigned char* adata;
-    unsigned char* bdata;
-
-    if (a == b) return true;
-
-    if (!a || !b) return false;
-
     if (a->len != b->len) return false;
 
-    adata = (unsigned char*)a->ptr;
-    bdata = (unsigned char*)b->ptr;
-    for (int i = 0; i < a->len; i++) {
-        if (adata[i] != bdata[i]) {
-            return false;
-        }
-    }
-    return true;
+    if (a->len == 0) return a->ptr == b->ptr;
+
+    return bcmp(a->ptr, b->ptr, a->len) == 0 ? true : false;
 }
 
 static bool default_copy(C_Userdata* to, const C_Userdata* from) {
@@ -97,12 +87,9 @@ struct C_Table {
     size_t         nentries;
 
     C_Table_Hash    hash;
-    C_Userdata_Eq   eq;
+    C_Userdata_Equals   eq;
     C_Userdata_Copy cp;
     C_Userdata_Free rm;
-};
-
-struct C_Table_Iterator {
 };
 
 extern void C_Table_new(C_Table* *tptr, size_t minsz) {
@@ -123,6 +110,27 @@ extern void C_Table_new(C_Table* *tptr, size_t minsz) {
     t->nentries = 0;
 
     (*tptr) = t;
+}
+
+static uint64_t hashcode(C_Table* t, const C_Userdata* key) {
+    if (C_Userdata_is_reference(key)) {
+        return (uint64_t)key->ptr;
+    } else {
+        return t->hash(key->ptr, key->len);
+    }
+}
+
+static bool udequals(C_Table* t, const C_Userdata* a, const C_Userdata* b) {
+    if (a == b) return true;
+
+    if (!a || !b) return false;
+
+    if (a->tag == DEFAULT_TAG && b->tag == DEFAULT_TAG
+            && a->len == 0 && b->len == 0) {
+        return a->ptr == b->ptr;
+    }
+
+    return t->eq(a, b);
 }
 
 static bool udcopy(C_Table* t, C_Userdata* to, const C_Userdata* from) {
@@ -174,16 +182,94 @@ extern void C_Table_free(C_Table* *tptr) {
     tptr = NULL;
 }
 
-/* ---------------------- Table Entry Functions --------------------------*/
+static void insert_entry(C_Table* t, C_Table_Entry* entry) {
+    size_t index = hashcode(t, &(entry->key)) % t->arraylen;
 
+    entry->next = t->array[index];
+    t->array[index] = entry;
+}
 
-static uint64_t hashcode(C_Table* t, const C_Userdata* key) {
-    if (C_Userdata_is_reference(key)) {
-        return (uint64_t)key->ptr;
-    } else {
-        return t->hash(key->ptr, key->len);
+static void rehash(C_Table* t) {
+    C_Table_Entry* head = NULL;
+    C_Table_Entry* tail = NULL;
+
+    // First gather up all the entries in a big chain
+    for (int i = 0; i < t->arraylen; i++) {
+        C_Table_Entry* curr = t->array[i];
+
+        if (curr == NULL) continue;
+
+        if (head == NULL) {
+            head = curr;
+        }
+        if (tail != NULL) {
+            tail->next = curr;
+        }
+        tail = curr;
+        while (tail->next != NULL) {
+            tail = tail->next;
+        }
+        t->array[i] = NULL;
+    }
+
+    // Then replace them using the new functions / array size
+    while (head != NULL) {
+        C_Table_Entry* prev = head;
+
+        head = head->next;
+        prev->next = NULL;
+        insert_entry(t, prev);
     }
 }
+
+/* --------------------- Configuration Functions -------------------------*/
+
+extern size_t C_Table_size(C_Table* t) {
+    return t->nentries;
+}
+
+extern void C_Table_define_hash_function(C_Table* t, C_Table_Hash f) {
+    if (t == NULL) return;
+    if (f == NULL) {
+        t->hash = default_hash;
+    } else {
+        t->hash = f;
+    }
+    rehash(t);
+}
+
+extern void C_Table_define_data_equals(C_Table* t, C_Userdata_Equals f) {
+    if (t == NULL) return;
+    if (f == NULL) {
+        t->eq = default_equals;
+    } else {
+        t->eq = f;
+    }
+    rehash(t);
+}
+
+extern void C_Table_define_data_copy(C_Table* t, C_Userdata_Copy f) {
+    if (t == NULL) return;
+    if (f == NULL) {
+        t->cp = default_copy;
+    } else {
+        t->cp = f;
+    }
+    rehash(t);
+}
+
+extern void C_Table_define_data_free(C_Table* t, C_Userdata_Free f) {
+    if (t == NULL) return;
+    if (f == NULL) {
+        t->rm = default_free;
+    } else {
+        t->rm = f;
+    }
+    rehash(t);
+}
+
+/* ---------------------- Table Entry Functions --------------------------*/
+
 
 static C_Table_Entry* find_entry(C_Table* t, const C_Userdata* key, C_Table_Entry* (*prevptr)) {
     C_Table_Entry* result = NULL;
@@ -191,7 +277,7 @@ static C_Table_Entry* find_entry(C_Table* t, const C_Userdata* key, C_Table_Entr
     uint64_t h = hashcode(t, key);
 
     result = t->array[h % t->arraylen];
-    while (result != NULL && !t->eq(&(result->key), key)) {
+    while (result != NULL && !udequals(t, &(result->key), key)) {
         prev = result;
         result = result->next;
     }
@@ -201,16 +287,32 @@ static C_Table_Entry* find_entry(C_Table* t, const C_Userdata* key, C_Table_Entr
     return result;
 }
 
-static bool insert_entry(C_Table* t, const C_Userdata* key, const C_Userdata* value) {
-    size_t index = hashcode(t, key) % t->arraylen;
-
+static bool insert_pair(C_Table* t, const C_Userdata* key, const C_Userdata* value) {
     C_Table_Entry* entry = (C_Table_Entry*)malloc(sizeof(C_Table_Entry));
 
     udcopy(t, &(entry->key), key);
     udcopy(t, &(entry->value), value);
 
-    entry->next = t->array[index];
-    t->array[index] = entry;
+    insert_entry(t, entry);
+
+    t->nentries++;
+
+    if (t->nentries >= TABLE_LOAD * t->arraylen) {
+        size_t oldlen = t->arraylen;
+        size_t newlen = oldlen * 2 + 1;
+        C_Table_Entry** newarray 
+            = reallocarray(t->array, newlen, sizeof(C_Table_Entry*));
+        if (newarray != NULL) {
+            for (int i = oldlen; i < newlen; i++) {
+                // TODO: Yes, there's a better way to do this
+                newarray[i] = NULL;
+            }
+            // bzero(&(newarray[oldlen]), (newlen - oldlen) * sizeof(C_Table_Entry*));
+            t->array = newarray;
+            t->arraylen = newlen;
+            rehash(t);
+        }
+    }
 
     return true;
 }
@@ -220,7 +322,7 @@ static bool update_entry(C_Table* t, C_Table_Entry* entry, const C_Userdata* val
     C_Userdata newval;
 
     udcopy(t, &newval, value);
-    if (!(t->eq(&newval, value))) {
+    if (!(udequals(t, &newval, value))) {
         udfree(t, &newval);
         return false;
     }
@@ -243,7 +345,7 @@ extern bool C_Table_add(C_Table* t, const C_Userdata* key, const C_Userdata* val
         return false;
     }
 
-    return insert_entry(t, key, value);
+    return insert_pair(t, key, value);
 }
 
 extern bool C_Table_get(C_Table* t, const C_Userdata* key, C_Userdata* value) {
@@ -272,7 +374,7 @@ extern bool C_Table_put(C_Table* t, const C_Userdata* key, const C_Userdata* val
 
     entry = find_entry(t, key, NULL);
     if (entry == NULL) {
-        return insert_entry(t, key, value);
+        return insert_pair(t, key, value);
     }
 
     return update_entry(t, entry, value);
@@ -300,6 +402,90 @@ extern bool C_Table_remove(C_Table* t, const C_Userdata* key) {
     udfree(t, &(entry->key));
     udfree(t, &(entry->value));
 
+    return true;
+}
+
+/* -------------------- Iterator Functions ------------------------- */
+
+struct C_Table_Iterator {
+    C_Table_Entry** entryset;
+    int             pos;
+    int             len;
+};
+
+extern void C_Table_new_iterator(C_Table* t, C_Table_Iterator* *iptr) {
+    C_Table_Iterator* result;
+    C_Table_Entry**   resultarr;
+    int               j, jmax;
+
+    if (t == NULL || iptr == NULL) return;
+
+    result = (C_Table_Iterator*)malloc(sizeof(C_Table_Iterator));
+    if (result == NULL) return;
+
+    // Add empty slots before and after entries for before iteration
+    // starts and after it stops, lest we run off the array either way.
+    jmax = t->nentries + 1;
+
+    resultarr = (C_Table_Entry**)calloc(jmax + 1, sizeof(C_Table_Entry*));
+    if (result == NULL) {
+        free(result);
+        return;
+    }
+
+    j = 1;
+    for (int i = 0; i < t->arraylen && j < jmax; i++) {
+        C_Table_Entry* curr = t->array[i];
+
+        while (curr != NULL) {
+            resultarr[j] = curr;
+            j++;
+            curr = curr->next;
+        }
+    }
+    result->entryset = resultarr;
+    result->pos = 0;
+    result->len = jmax;
+
+    *iptr = result;
+}
+
+extern bool C_Table_Iterator_has_next(C_Table_Iterator* i) {
+    return i->pos < i->len - 1;
+}
+
+extern void C_Table_Iterator_next(C_Table_Iterator* i) {
+    i->pos++;
+}
+
+static C_Table_Entry* get_entry(C_Table_Iterator* i) {
+    if (i->pos >= 0 && i->pos < i->len) {
+        return i->entryset[i->pos];
+    }
+    return NULL;
+}
+
+extern bool C_Table_Iterator_current_key(C_Table_Iterator* i, C_Userdata *key) {
+    C_Table_Entry* entry = get_entry(i);
+    if (entry == NULL) return false;
+    C_Userdata_set(key, entry->key.tag, entry->key.len, entry->key.ptr);
+    return true;
+}
+
+extern bool C_Table_Iterator_current_pair(C_Table_Iterator* i, C_Userdata *key, C_Userdata *value) {
+    C_Table_Entry* entry = get_entry(i);
+    if (entry == NULL) return false;
+    C_Userdata_set(key, entry->key.tag, entry->key.len, entry->key.ptr);
+    C_Userdata_set(value, entry->value.tag, entry->value.len, entry->value.ptr);
+    return true;
+}
+
+extern bool C_Table_Iterator_del(C_Table_Iterator* *iptr) {
+    if (!(iptr)) return false;
+
+    free((*iptr)->entryset);
+    free(*iptr);
+    *iptr = NULL;
     return true;
 }
 

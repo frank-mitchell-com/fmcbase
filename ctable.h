@@ -29,9 +29,19 @@
 #include <stdbool.h>  /* defines bool */
 #include <stdint.h>   /* defines {,u}intN_t */
 
+/**
+ *
+ */
 typedef struct C_Table          C_Table;
+
+/**
+ *
+ */
 typedef struct C_Table_Iterator C_Table_Iterator;
 
+/**
+ * The type of `C_Userdata.tag`.
+ */
 typedef unsigned int tag_t;
 
 /**
@@ -40,6 +50,9 @@ typedef unsigned int tag_t;
  */
 #define DEFAULT_TAG     0
 
+/**
+ * An open structure to hold key and value parameters.
+ */
 typedef struct C_Userdata {
     /** user-defined tag to identify 'type' */
     tag_t  tag;
@@ -53,7 +66,7 @@ typedef struct C_Userdata {
 
 typedef uint64_t (*C_Table_Hash)(const void* ptr, size_t len);
 
-typedef bool (*C_Userdata_Eq)(const C_Userdata* a, const C_Userdata* b);
+typedef bool (*C_Userdata_Equals)(const C_Userdata* a, const C_Userdata* b);
 
 typedef bool (*C_Userdata_Copy)(C_Userdata* dest, const C_Userdata* src);
 
@@ -68,7 +81,7 @@ size_t C_Table_size(C_Table* t);
 
 void C_Table_define_hash_function(C_Table* t, C_Table_Hash);
 
-void C_Table_define_data_eq(C_Table* t, C_Userdata_Eq);
+void C_Table_define_data_equals(C_Table* t, C_Userdata_Equals);
 
 void C_Table_define_data_copy(C_Table* t, C_Userdata_Copy);
 
@@ -113,17 +126,13 @@ void C_Table_free(C_Table* *tptr);
 
 void C_Table_new_iterator(C_Table* t, C_Table_Iterator* *iptr);
 
-bool C_Table_Iterator_at_end(C_Table_Iterator* i);
+bool C_Table_Iterator_has_next(C_Table_Iterator* i);
 
 void C_Table_Iterator_next(C_Table_Iterator* i);
 
-bool C_Table_Iterator_current_key(C_Table_Iterator* i, C_Userdata* *key);
+bool C_Table_Iterator_current_key(C_Table_Iterator* i, C_Userdata *key);
 
-bool C_Table_Iterator_current_pair(C_Table_Iterator* i, 
-                                    C_Userdata* *keyptr, 
-                                    C_Userdata* *valptr);
-
-bool C_Table_Iterator_remove_current(C_Table_Iterator* i);
+bool C_Table_Iterator_current_pair(C_Table_Iterator* i, C_Userdata *key, C_Userdata *val);
 
 bool C_Table_Iterator_del(C_Table_Iterator* *iptr);
 

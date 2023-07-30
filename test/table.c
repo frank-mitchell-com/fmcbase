@@ -28,6 +28,11 @@
 
 static C_Table* t = NULL;
 
+typedef struct _kvpair {
+    const char* key; 
+    const char* value;
+} kvpair;
+
 static const char* tostr(C_Userdata ud) {
     static char* last_result;
     static char* result;
@@ -54,6 +59,12 @@ static void setup() {
 
 static void teardown() {
     C_Table_free(&t);
+}
+
+static void table_smoke() {
+    setup();
+
+    teardown();
 }
 
 static void table_has() {
@@ -108,6 +119,53 @@ static void table_add() {
     C_Userdata_clear(&actual, false);
     lok(C_Table_get(t, &key, &actual));
     lsequal(tostr(value), tostr(actual));
+
+    teardown();
+}
+
+static void table_add_multiple() {
+    C_Userdata key, value, actual;
+    kvpair expected[] = {
+        { "alpha",   "alpha" },
+        { "bravo",   "bravo" },
+        { "charlie", "charlie" },
+        { "delta",   "delta" },
+        { "echo",    "echo" },
+        { "foxtrot", "foxtrot" },
+        { "golf",    "golf" },
+        { "hotel",   "hotel" },
+        { "india",   "india" },
+        { "juliet",  "juliet" },
+        { "kilo",    "kilo" },
+        { "lima",    "lima" },
+        { "mike",    "mike" },
+        { "Takehito", "Koyasu" },
+        { "Saori",    "Hayami" },
+        { "Akio",     "Ootori" },
+        { NULL, NULL }
+    };
+
+    setup();
+
+    for (int i = 0; expected[i].key != NULL; i++) {
+        // ADD key = value
+        C_Userdata_set_string(&key, expected[i].key);
+        C_Userdata_set_string(&value, expected[i].value);
+        lok(C_Table_add(t, &key, &value));
+
+        // Check key = value in table
+        C_Userdata_clear(&actual, false);
+        lok(C_Table_get(t, &key, &actual));
+        lsequal(tostr(value), tostr(actual));
+    }
+
+    for (int i = 0; expected[i].key != NULL; i++) {
+        // Check key = value in table AGAIN
+        C_Userdata_set_string(&key, expected[i].key);
+        C_Userdata_clear(&actual, false);
+        lok(C_Table_get(t, &key, &actual));
+        lsequal(expected[i].value, (char*)actual.ptr);
+    }
 
     teardown();
 }
@@ -217,21 +275,82 @@ static void table_remove() {
     teardown();
 }
 
-static void table_smoke() {
+static kvpair* findpair(const char* key, kvpair* kvt, size_t sz) {
+    if (!key) return NULL;
+
+    for (int i = 0; i < sz; i++) {
+        if (strcmp(key, kvt[i].key) == 0) {
+            return &(kvt[i]);
+        }
+    }
+    return NULL;
+}
+
+static void table_iterator() {
+    C_Userdata key, value;
+    kvpair expected[] = {
+        { "alpha?",   "alpha!" },
+        { "charlie?", "charlie!" },
+        { "golf?",    "golf!" },
+        { "kilo?",    "kilo!" },
+        { "Saori",    "Hayami" },
+        { NULL, NULL }
+    };
+    int expsz = 5;
+    int count;
+    C_Table_Iterator* i = NULL;
+
     setup();
+
+    for (int i = 0; expected[i].key != NULL; i++) {
+        // ADD key = value
+        C_Userdata_set_string(&key, expected[i].key);
+        C_Userdata_set_string(&value, expected[i].value);
+        lok(C_Table_add(t, &key, &value));
+    }
+
+    C_Table_new_iterator(t, &i);
+    lok(i != NULL);
+
+    count = 0;
+    while (C_Table_Iterator_has_next(i)) {
+        kvpair* exprec;
+
+        C_Table_Iterator_next(i);
+        C_Userdata_clear(&key, false);
+        C_Userdata_clear(&value, false);
+        C_Table_Iterator_current_pair(i, &key, &value);
+
+        // Won't be in order, so we'll have to do this the hard way ...
+        exprec = findpair((const char *)key.ptr, expected, expsz); 
+
+        lok(exprec != NULL);
+        if (!exprec) break;
+
+        lsequal(exprec->key,   (char*)key.ptr);
+        lsequal(exprec->value, (char*)value.ptr);
+        count++;
+
+        if (count > expsz + 3) break;
+    }
+    C_Table_Iterator_del(&i);
+    lequal(expsz, count);
 
     teardown();
 }
+
 
 int main (int argc, char* argv[]) {
     lrun("table_smoke", table_smoke);
     lrun("table_get", table_get);
     lrun("table_has", table_has);
     lrun("table_add", table_add);
+    lrun("table_add_multiple", table_add_multiple);
     lrun("table_put", table_put);
     lrun("table_remove", table_remove);
     lrun("table_with_pointer_key", table_with_pointer_key);
     lrun("table_with_pointer_value", table_with_pointer_value);
+    lrun("table_iterator", table_iterator);
     lresults();
     return lfails != 0;
 }
