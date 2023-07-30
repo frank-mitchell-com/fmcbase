@@ -90,7 +90,7 @@ static void default_free(C_Userdata* ud) {
     free(ud->ptr);
 }
 
-struct _C_Table {
+struct C_Table {
 
     C_Table_Entry* *array;
     size_t         arraylen;
@@ -102,7 +102,7 @@ struct _C_Table {
     C_Userdata_Free rm;
 };
 
-struct _C_Table_Iterator {
+struct C_Table_Iterator {
 };
 
 extern void C_Table_new(C_Table* *tptr, size_t minsz) {

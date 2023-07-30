@@ -32,29 +32,30 @@ typedef struct _U_Char_Buffer*  U_Char_Buffer;
 
 USTR_API void U_Char_Buffer_new(U_Char_Buffer* *newref);
 
-USTR_API void U_Char_Buffer_new_from_string(U_Char_Buffer* *newref, ustring_t str);
+USTR_API void U_Char_Buffer_new_from_string(U_Char_Buffer* *newref, U_String* str);
 
 USTR_API size_t U_Char_Buffer_length(U_Char_Buffer* self);
 
 USTR_API wchar_t U_Char_Buffer_get_char(U_Char_Buffer* self, int index);
 
-USTR_API ustring_t U_Char_Buffer_get_slice(U_Char_Buffer* self, int first, int last);
+USTR_API bool U_Char_Buffer_get_slice(U_Char_Buffer* self, int first, int last, U_String* *sp);
+
 
 USTR_API void U_Char_Buffer_append_char(U_Char_Buffer* self, wchar_t c);
 
-USTR_API void U_Char_Buffer_append_string(U_Char_Buffer* self, ustring_t s);
+USTR_API void U_Char_Buffer_append_string(U_Char_Buffer* self, U_String* s);
 
 USTR_API void U_Char_Buffer_insert_char(U_Char_Buffer* self, int index, wchar_t c);
 
-USTR_API void U_Char_Buffer_insert_string(U_Char_Buffer* self, int index, ustring_t s);
+USTR_API void U_Char_Buffer_insert_string(U_Char_Buffer* self, int index, U_String* s);
 
 USTR_API void U_Char_Buffer_set_char(U_Char_Buffer* self, int index, wchar_t c);
 
-USTR_API void U_Char_Buffer_set_slice(U_Char_Buffer* self, int first, int last, ustring_t str);
+USTR_API void U_Char_Buffer_set_slice(U_Char_Buffer* self, int first, int last, U_String* str);
 
-USTR_API void U_Char_Buffer_set_string(U_Char_Buffer* self, int index, ustring_t s);
+USTR_API void U_Char_Buffer_set_string(U_Char_Buffer* self, int index, U_String* s);
 
-USTR_API ustring_t U_Char_Buffer_to_string(U_Char_Buffer* self);
+USTR_API bool U_Char_Buffer_to_string(U_Char_Buffer* self, U_String* *sp);
 
 USTR_API bool U_Char_Buffer_is_live(U_Char_Buffer* b);
 

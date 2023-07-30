@@ -23,12 +23,14 @@
 #ifndef CTABLE_H_INCLUDED
 #define CTABLE_H_INCLUDED
 
+/** @file */
+
 #include <stddef.h>   /* defines size_t */
 #include <stdbool.h>  /* defines bool */
 #include <stdint.h>   /* defines {,u}intN_t */
 
-typedef struct _C_Table          C_Table;
-typedef struct _C_Table_Iterator C_Table_Iterator;
+typedef struct C_Table          C_Table;
+typedef struct C_Table_Iterator C_Table_Iterator;
 
 typedef unsigned int tag_t;
 
@@ -38,10 +40,15 @@ typedef unsigned int tag_t;
  */
 #define DEFAULT_TAG     0
 
-typedef struct _C_Userdata {
-    tag_t  tag;     /* user-defined tag to identify 'type' */
-    size_t len;     /* size of (*ptr) or 0 if the pointer *is* the data */
-    void*  ptr;     /* pointer to data */
+typedef struct C_Userdata {
+    /** user-defined tag to identify 'type' */
+    tag_t  tag;
+
+    /** size of data at `*ptr` or 0 if the pointer *is* the data */
+    size_t len;
+
+    /** pointer to data */
+    void*  ptr;
 } C_Userdata;
 
 typedef uint64_t (*C_Table_Hash)(const void* ptr, size_t len);

@@ -40,7 +40,7 @@
 static C_Table* _symbols_by_name = NULL;
 static C_Table* _symbols_by_ref  = NULL;
 
-struct _C_Symbol {
+struct C_Symbol {
     volatile atomic_int refcnt;
 
     /* not changed after creation */

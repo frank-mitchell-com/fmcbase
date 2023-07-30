@@ -35,6 +35,8 @@ typedef uint16_t utf16_t;
 
 bool C_Conv_is_ascii(size_t sz, const char* buf);
 
+bool C_Conv_is_utf16(size_t sz, const wchar_t* buf);
+
 size_t C_Conv_utf8_to_16_length(size_t sz, const char* buf, size_t *csz);
 
 size_t C_Conv_utf8_to_32_length(size_t sz, const char* buf, size_t *csz);
@@ -56,8 +58,10 @@ size_t C_Conv_utf32_to_8(size_t insz, const wchar_t* inbuf, size_t outsz, char* 
 size_t C_Conv_utf32_to_16(size_t insz, const wchar_t* inbuf, size_t outsz, utf16_t* outbuf);
 
 /**
- *
- * Returns the number of bytes written to `outbuf`.
+ * Converts `insz` bytes at `inbuf` encoded via character encoding `incode` 
+ * to `outbuf` (up to `outsz` bytes) encoded via `outcode`.
+ * If given, `nreadp` contains the number of bytes actually read from `inbuf`.
+ * The function returns the number of bytes written to `outbuf`.
  */
 ssize_t C_Conv_transcode(const char* incode, const char* outcode, size_t insz, char* inbuf, size_t outsz, char* outbuf, size_t* nread);
 

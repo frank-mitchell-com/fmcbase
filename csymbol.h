@@ -31,12 +31,12 @@
  * A unique value sometimes tied to a string value.
  * The mapping to strings, if any, resides in a thread-safe global hashtable.
  */
-typedef struct _C_Symbol C_Symbol;
+typedef struct C_Symbol C_Symbol;
 
 /**
  * Determines whether `p` is a C_Symbol.
- * The implementation checks whether `p` is in the right memory range instead
- * of dereferencing it, in case it points to an invalid memory location.
+ * The implementation checks the value of `p` instead of dereferencing it,
+ * in case it points to an invalid memory location.
  */
 bool is_C_Symbol(void* p);
 

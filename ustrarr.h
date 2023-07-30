@@ -31,13 +31,13 @@ USTR_API void U_String_Array_new(U_String_Array* *newref);
 
 USTR_API size_t U_String_Array_size(U_String_Array* self);
 
-USTR_API ustring_t U_String_Array_get_string(U_String_Array* self, int index);
+USTR_API bool U_String_Array_get_string(U_String_Array* self, int index, U_String* *sp);
 
-USTR_API void U_String_Array_append_string(U_String_Array* self, ustring_t s);
+USTR_API void U_String_Array_append_string(U_String_Array* self, U_String* s);
 
-USTR_API void U_String_Array_insert_string(U_String_Array* self, int index, ustring_t s);
+USTR_API void U_String_Array_insert_string(U_String_Array* self, int index, U_String* s);
 
-USTR_API void U_String_Array_set_string(U_String_Array* self, int index, ustring_t s);
+USTR_API void U_String_Array_set_string(U_String_Array* self, int index, U_String* s);
 
 USTR_API bool U_String_Array_is_live(U_String_Array* a);
 

@@ -40,6 +40,6 @@ $(LIB): $(OBJECTS)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 clean:
-	rm -rf $(OBJDIR)/*.o $(LIBDIR)/*.a $(LIBDIR)/*.so $(TESTDIR)/*.run
+	rm -rf $(OBJECTS) $(LIB) $(SHLIB) $(TESTS)
 
 
