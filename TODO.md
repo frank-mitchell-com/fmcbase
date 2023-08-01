@@ -9,21 +9,12 @@
 ## PENDING IMPLEMENTATION
 
 - `C_Conv`
-   - UTF-x to y conversion
    - Invalid encoding detection & signalling
 
 - `C_Port`
 
-- `C_Symbol`
-   - table lock
-
 - `C_Table`
-   - resizing
-   - iterator
-   - custom hash function
-   - custom equal, copy, delete
    - collision metrics
-   - look for memory leaks
 
 - `U_String`
 
@@ -36,12 +27,23 @@
 - `C_Conv`
   - Check endianness of UTF-16 and UTF-32
 
+- `C_Symbol`
+   - table lock
+
 - `C_Table`
+   - custom hash function
+   - custom equal, copy, delete
+   - look for memory leaks
+
+- `U_String`
+   - all functions
+   - reference counting
+   - conversion to codepoints
 
 ## COMPILATION
 
-- Other Thread Models (compilation switches)
-  - no threads
+- Other Thread Libraries (compilation switches)
+  - single threaded
   - Windows Threads
   - Netscape Common Runtime
   - Apache Common Runtime

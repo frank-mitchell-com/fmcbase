@@ -134,7 +134,7 @@ bool C_Table_Iterator_current_key(C_Table_Iterator* i, C_Userdata *key);
 
 bool C_Table_Iterator_current_pair(C_Table_Iterator* i, C_Userdata *key, C_Userdata *val);
 
-bool C_Table_Iterator_del(C_Table_Iterator* *iptr);
+bool C_Table_Iterator_free(C_Table_Iterator* *iptr);
 
 /* -------------------- Userdata Functions ------------------------- */
 

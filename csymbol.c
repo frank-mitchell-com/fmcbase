@@ -25,6 +25,9 @@
 #include <stdatomic.h>
 #include <stdlib.h>
 #include "ctable.h"
+#include "crefcnt.h"
+#include "crefset.h"
+#include "cthread.h"
 
 #include "csymbol.h"
 
@@ -37,25 +40,17 @@
  * operations.
  */
 
-static C_Table* _symbols_by_name = NULL;
-static C_Table* _symbols_by_ref  = NULL;
+static C_Table*   _symbols_by_name = NULL;
+static C_Ref_Set* _symbol_ref_set  = NULL;
+
+static LOCK_DECL(_lock);
 
 struct C_Symbol {
-    volatile atomic_int refcnt;
-
     /* not changed after creation */
     bool    tenured;
     size_t  strlen;
     uint8_t *strbuf;
 };
-
-static void lock_acquire() {
-    // Assume re-entrant lock so multiple calls simply increment a count
-}
-
-static void lock_release() {
-    // Assume re-entrant lock so multiple calls simply decrement a count
-}
 
 static C_Table* symbols_by_name() {
     if (!_symbols_by_name) {
@@ -64,11 +59,11 @@ static C_Table* symbols_by_name() {
     return _symbols_by_name;
 }
 
-static C_Table* symbols_by_ref() {
-    if (!_symbols_by_ref) {
-        C_Table_new(&_symbols_by_ref, 10);
+static C_Ref_Set* symbol_ref_set() {
+    if (!_symbol_ref_set) {
+        C_Ref_Set_new(&_symbol_ref_set, 10);
     }
-    return _symbols_by_ref;
+    return _symbol_ref_set;
 }
 
 /*
@@ -79,10 +74,8 @@ static void free_symbol(C_Symbol* sym) {
     C_Userdata key;
     if (!sym) return;
 
-    if (symbols_by_ref()) {
-        C_Userdata_set_pointer(&key, sym);
-        C_Table_remove(symbols_by_ref(), &key);
-    }
+    C_Ref_Count_delist(sym);
+    C_Ref_Set_remove(symbol_ref_set(), sym);
     if (sym->strbuf && symbols_by_name()) {
         // In case of nulls ...
         C_Userdata_set_value(&key, sym->strbuf, sym->strlen);
@@ -103,13 +96,19 @@ static C_Symbol* symbol_alloc_init(size_t len, const uint8_t* uptr) {
     C_Userdata key, value;
 
     C_Symbol* result = (C_Symbol*)malloc(sizeof(C_Symbol));
-    if (!result) goto error;
+    if (!result) {
+        free_symbol(result);
+        return NULL;
+    }
 
     bzero(result, sizeof(C_Symbol));
 
     if (uptr) {
         uint8_t* buf = (uint8_t*)calloc(len+1, sizeof(uint8_t));
-        if (!buf) goto error;
+        if (!buf) {
+            free_symbol(result);
+            return NULL;
+        }
 
         // Can't use strdup() because of possible embedded nulls
         // TODO: Does this handle "" properly?
@@ -122,17 +121,14 @@ static C_Symbol* symbol_alloc_init(size_t len, const uint8_t* uptr) {
         C_Userdata_set_value(&key, buf, len);
         C_Userdata_set_pointer(&value, result);
 
-        if (!C_Table_add(symbols_by_name(), &key, &value)) goto error;
+        if (!C_Table_add(symbols_by_name(), &key, &value)) {
+            free_symbol(result);
+            return NULL;
+        }
     }
-    C_Userdata_set_pointer(&key, result);
-    C_Userdata_set_pointer(&value, result);
-    if (!C_Table_put(symbols_by_ref(), &key, &value)) goto error;
+    C_Ref_Count_list(result);
+    C_Ref_Set_add(symbol_ref_set(), result);
 
-    goto finally;
-error:
-    free_symbol(result);
-    goto finally;
-finally:
     return result;
 }
 
@@ -164,17 +160,13 @@ static C_Symbol* find_symbol(size_t len, const uint8_t* uptr, bool* isnew) {
 }
 
 extern bool is_C_Symbol(void* p) {
-    C_Userdata key;
-    bool result = false;
+    bool result;
 
-    if (!symbols_by_ref()) return false;
+    LOCK_ACQUIRE(_lock);
 
-    lock_acquire();
+    result = C_Ref_Set_has(symbol_ref_set(), p);
 
-    C_Userdata_set_pointer(&key, p);
-    result = C_Table_has(symbols_by_ref(), &key);
-
-    lock_release();
+    LOCK_RELEASE(_lock);
 
     return result;
 }
@@ -184,13 +176,13 @@ extern void C_Symbol_new(C_Symbol* *symptr) {
 
     if (!symptr) return;
 
-    lock_acquire();
+    LOCK_ACQUIRE(_lock);
 
     sym = symbol_alloc_init(0, NULL);
 
-    lock_release();
+    LOCK_RELEASE(_lock);
 
-    (*symptr) = C_Symbol_retain(sym);
+    (*symptr) = sym;
 }
 
 extern bool C_Symbol_for_cstring(C_Symbol* *symptr, const char* cstr) {
@@ -203,13 +195,13 @@ extern bool C_Symbol_for_utf8_string(C_Symbol* *symptr, size_t len, const uint8_
 
     if (!symptr) return false;
 
-    lock_acquire();
+    LOCK_ACQUIRE(_lock);
 
     sym = find_symbol(len, uptr, &result);
 
-    lock_release();
+    LOCK_RELEASE(_lock);
 
-    (*symptr) = C_Symbol_retain(sym);
+    (*symptr) = sym;
 
     return result;
 }
@@ -219,38 +211,39 @@ extern int C_Symbol_references(C_Symbol* sym) {
 
     if (!sym || !is_C_Symbol(sym)) return -255;
 
-    refcnt = sym->refcnt;
+    refcnt = C_Ref_Count_refcount(sym);
 
     if (sym->tenured) {
-        return (refcnt > 0) ? refcnt + 1 : 1;
+        refcnt++;
     }
-    return sym->refcnt;
+    return refcnt;
 }
 
 extern C_Symbol* C_Symbol_retain(C_Symbol* sym) {
     if (!sym || !is_C_Symbol(sym)) return sym;
 
-    sym->refcnt++;
+    C_Ref_Count_increment(sym);
 
     return sym;
 }
 
 extern void C_Symbol_release(C_Symbol* *symptr) {
     C_Symbol* sym;
+    uint32_t refcnt;
 
     if (!symptr) return;
     sym = *symptr;
 
     if (!sym || !is_C_Symbol(sym)) return;
 
-    sym->refcnt--;
+    refcnt = C_Ref_Count_decrement(sym);
 
-    if (!sym->tenured && sym->refcnt <= 0) {
-        lock_acquire();
+    if (!sym->tenured && refcnt == 0) {
+        LOCK_ACQUIRE(_lock);
 
         free_symbol(sym);
 
-        lock_release();
+        LOCK_RELEASE(_lock);
     }
 
     (*symptr) = NULL;

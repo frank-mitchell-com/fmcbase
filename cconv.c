@@ -24,11 +24,12 @@
 
 #include <errno.h>
 #include <iconv.h>
-#include <stdio.h>
 #include <string.h>
 #include "cconv.h"
 
 #define OCTET(x) ((uint8_t)(0xff & (x)))
+
+/* ---------------------- Buffer Size Helpers --------------------------- */
 
 extern bool C_Conv_is_ascii(size_t sz, const char* buf) {
     for (int i = 0; i < sz; i++) {
@@ -115,6 +116,8 @@ extern size_t C_Conv_utf32_to_8_length(size_t sz, const wchar_t* buf, size_t *cs
     if (csz) *csz = i;
     return result;
 }
+
+/* -------------------------- UTF-x Conversions -------------------------- */
 
 static bool has_conbytes(const char* buf, int i, size_t count, size_t max) {
     for (int k = 1; k <= count; k++) {
@@ -387,6 +390,8 @@ extern size_t C_Conv_utf32_to_8(size_t insz, const wchar_t* inbuf, size_t outsz,
     }
     return j;
 }
+
+/* ----------------------- GENERAL CONVERSION ----------------------------*/
 
 extern ssize_t C_Conv_transcode(const char* incode, const char* outcode, size_t insz, char* inbuf, size_t outsz, char* outbuf, size_t* nreadp) {
     iconv_t cd;

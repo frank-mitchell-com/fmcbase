@@ -36,7 +36,7 @@ typedef uint8_t  octet_t;
 typedef uint8_t  utf8_t;
 typedef uint16_t utf16_t;
 
-typedef struct _U_String* U_String;
+typedef struct _U_String U_String;
 
 /**
  * Prototype for an iterator over all chars s[`i`]==`c` in the string `s`.

@@ -333,7 +333,7 @@ static void table_iterator() {
 
         if (count > expsz + 3) break;
     }
-    C_Table_Iterator_del(&i);
+    C_Table_Iterator_free(&i);
     lequal(expsz, count);
 
     teardown();

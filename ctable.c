@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <stdio.h>
 #include "ctable.h"
 
 #define TABLE_MINSIZ    5
@@ -480,7 +479,7 @@ extern bool C_Table_Iterator_current_pair(C_Table_Iterator* i, C_Userdata *key, 
     return true;
 }
 
-extern bool C_Table_Iterator_del(C_Table_Iterator* *iptr) {
+extern bool C_Table_Iterator_free(C_Table_Iterator* *iptr) {
     if (!(iptr)) return false;
 
     free((*iptr)->entryset);
