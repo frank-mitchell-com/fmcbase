@@ -36,6 +36,9 @@ typedef uint8_t  octet_t;
 typedef uint8_t  utf8_t;
 typedef uint16_t utf16_t;
 
+/**
+ *
+ */
 typedef struct _U_String U_String;
 
 /**
@@ -198,7 +201,7 @@ USTR_API size_t U_String_references(U_String* s);
 /**
  *
  */
-USTR_API bool U_String_retain(U_String* s);
+USTR_API U_String* U_String_retain(U_String* s);
 
 /**
  *
@@ -208,7 +211,7 @@ USTR_API bool U_String_release(U_String* *s);
 /**
  *
  */
-USTR_API bool U_String_set(U_String* *lvalue, U_String* rvalue);
+USTR_API U_String* U_String_set(U_String* *lvalue, U_String* rvalue);
 
 #endif // USTRING_H_INCLUDED
 

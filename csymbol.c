@@ -74,7 +74,6 @@ static void free_symbol(C_Symbol* sym) {
     C_Userdata key;
     if (!sym) return;
 
-    C_Ref_Count_delist(sym);
     C_Ref_Set_remove(symbol_ref_set(), sym);
     if (sym->strbuf && symbols_by_name()) {
         // In case of nulls ...
@@ -126,8 +125,8 @@ static C_Symbol* symbol_alloc_init(size_t len, const uint8_t* uptr) {
             return NULL;
         }
     }
-    C_Ref_Count_list(result);
     C_Ref_Set_add(symbol_ref_set(), result);
+    C_Ref_Count_list(result);
 
     return result;
 }
@@ -241,6 +240,7 @@ extern void C_Symbol_release(C_Symbol* *symptr) {
     if (!sym->tenured && refcnt == 0) {
         LOCK_ACQUIRE(_lock);
 
+        C_Ref_Count_delist(sym);
         free_symbol(sym);
 
         LOCK_RELEASE(_lock);

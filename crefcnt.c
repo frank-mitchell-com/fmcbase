@@ -42,6 +42,7 @@ typedef struct C_Ref_Record {
     LOCK_TYPE(lock);
     const void* key;
     uint32_t    refcnt;
+    bool        freed;
 } C_Ref_Record;
 
 
@@ -92,6 +93,7 @@ static C_Ref_Record* add_record(const void* obj) {
     LOCK_INIT(rec->lock);
     rec->key    = obj;
     rec->refcnt = 1;
+    rec->freed  = false;
 
     C_Userdata key, value;
     C_Userdata_set_pointer(&key, obj);
@@ -115,8 +117,8 @@ static void remove_record(C_Ref_Record* rec) {
 /* ---------------------------- API FUNCTIONS ---------------------------- */
 
 extern uint32_t C_Ref_Count_refcount(const void* obj) {
-    uint32_t result;
-    C_Ref_Record* rec;
+    uint32_t result = 1;
+    C_Ref_Record* rec = NULL;
 
     LOCK_ACQUIRE(_table_lock);
 
@@ -126,23 +128,26 @@ extern uint32_t C_Ref_Count_refcount(const void* obj) {
         rec = record(obj);
         if (!rec) {
             result = 1;
-        } else {
-            LOCK_ACQUIRE(rec->lock);
-
-            result = rec->refcnt;
-
-            LOCK_RELEASE(rec->lock);
         }
     }
 
     LOCK_RELEASE(_table_lock);
+
+    if (rec != NULL) {
+        LOCK_ACQUIRE(rec->lock);
+
+        result = rec->refcnt;
+
+        LOCK_RELEASE(rec->lock);
+    }
+
 
     return result;
 }
 
 extern uint32_t C_Ref_Count_decrement(const void* obj) {
     uint32_t result;
-    C_Ref_Record* rec;
+    C_Ref_Record* rec = NULL;
 
     LOCK_ACQUIRE(_table_lock);
 
@@ -151,12 +156,16 @@ extern uint32_t C_Ref_Count_decrement(const void* obj) {
         // Reference count is 1 or less; add to "zero set"
         C_Ref_Set_add(zeroset(), obj);
         result = 0;
-    } else {
-        bool freerec = false;
+    }
 
+    LOCK_RELEASE(_table_lock);
+
+    if (rec != NULL) {
         LOCK_ACQUIRE(rec->lock);
 
-        rec->refcnt--;
+        if (rec->refcnt > 0) {
+            rec->refcnt--;
+        }
         result = rec->refcnt;
 
         if (rec->refcnt <= 1) {
@@ -166,26 +175,26 @@ extern uint32_t C_Ref_Count_decrement(const void* obj) {
             // so using the lack of a record to signify 1
             // saves a lot of space in the table.
             remove_record(rec);
-            freerec = true;
+            rec->freed = true;
         }
 
-        LOCK_RELEASE(rec->lock);
-
-        if (freerec) {
+        if (rec->freed) {
+            // Must free "immediately" after release, according to spec.
+            LOCK_RELEASE(rec->lock);
             LOCK_FREE(rec->lock);
             free(rec);
             rec = NULL;
+        } else {
+            LOCK_RELEASE(rec->lock);
         }
     }
-
-    LOCK_RELEASE(_table_lock);
 
     return result;
 }
 
 extern uint32_t C_Ref_Count_increment(const void* obj) {
     uint32_t result = 0;
-    C_Ref_Record* rec;
+    C_Ref_Record* rec = NULL;
 
     LOCK_ACQUIRE(_table_lock);
 
@@ -193,6 +202,7 @@ extern uint32_t C_Ref_Count_increment(const void* obj) {
         // Reference count was zero, somehow.
         // Bump it back to 1 by removing the object from the Zero Set.
         C_Ref_Set_add(zeroset(), obj);
+        result = 1;
     } else {
         rec = record(obj);
         if (!rec) {
@@ -201,6 +211,11 @@ extern uint32_t C_Ref_Count_increment(const void* obj) {
             // count set to 1
             rec = add_record(obj);
         }
+    }
+
+    LOCK_RELEASE(_table_lock);
+
+    if (rec != NULL) {
         LOCK_ACQUIRE(rec->lock);
 
         // TODO: Check if less than maxint?
@@ -209,8 +224,6 @@ extern uint32_t C_Ref_Count_increment(const void* obj) {
 
         LOCK_RELEASE(rec->lock);
     }
-
-    LOCK_RELEASE(_table_lock);
 
     return result;
 }
@@ -236,7 +249,7 @@ extern void C_Ref_Count_list(const void* obj) {
 }
 
 extern void C_Ref_Count_delist(const void* obj) {
-    C_Ref_Record* rec;
+    C_Ref_Record* rec = NULL;
 
     LOCK_ACQUIRE(_table_lock);
 
@@ -244,17 +257,56 @@ extern void C_Ref_Count_delist(const void* obj) {
     C_Ref_Set_remove(zeroset(), obj);
 
     rec = record(obj);
-    if (rec) {
+
+    LOCK_RELEASE(_table_lock);
+
+    if (rec != NULL) {
         LOCK_ACQUIRE(rec->lock);
 
         remove_record(rec);
 
+        rec->freed = true;
+
         LOCK_RELEASE(rec->lock);
+
         LOCK_FREE(rec->lock);
 
         free(rec);
     }
+}
 
-    LOCK_RELEASE(_table_lock);
+extern void C_Ref_Count_on_zero(const void* p, void (*onzero)(void*)) {
+}
+
+/* ---------------------------- HELPER FUNCTIONS ---------------------------- */
+
+const void* C_Any_retain(const void* p) {
+    if (p == NULL || !C_Ref_Count_is_listed(p)) {
+        return NULL;
+    }
+    C_Ref_Count_increment(p);
+    return p;
+}
+
+bool C_Any_release(const void* *pptr) {
+    if (!pptr || !(*pptr) || !C_Ref_Count_is_listed(*pptr)) {
+        return false;
+    }
+
+    C_Ref_Count_decrement(*pptr);
+    *pptr = NULL;
+    return true;
+}
+
+const void* C_Any_set(const void* *lvalue, const void* value) {
+    const void* oldvalue;
+    if (!lvalue) {
+        return NULL;
+    }
+    oldvalue = *lvalue;
+    *lvalue = value;
+    C_Any_retain(value);
+    C_Any_release(&oldvalue);
+    return value;
 }
 

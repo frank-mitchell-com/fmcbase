@@ -26,8 +26,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef void (*C_On_Zero)(void* p, const void* data);
-
 /**
  * The current reference count for `p`.
  * If not listed, defaults to 1.
@@ -66,15 +64,28 @@ void C_Ref_Count_list(const void* p);
  */
 void C_Ref_Count_delist(const void* p);
 
+/**
+ * Register callback `onzero` for `p` when `p`'s reference count reaches 0.
+ * Usually used to free `p`.  Automatically delists `p` before it's called.
+ */
+void C_Ref_Count_on_zero(const void* p, void (*onzero)(void*));
 
-
+/**
+ * If `p` is listed, increment its reference count and return it.
+ */
 const void* C_Any_retain(const void* p);
 
+/**
+ * If `*pptr` is listed, decrement its reference count.
+ * `*pptr` will be set to NULL.
+ * Return whether `*pptr` was listed.
+ */
 bool C_Any_release(const void* *pptr);
 
+/**
+ * Assign `value` to `lvalue`, adjusting reference counts accordingly.
+ */
 const void* C_Any_set(const void* *lvalue, const void* value);
-
-void C_Any_onzero(const void* p, C_On_Zero fcn, const void* data);
 
 #endif // CREFCNT_H_INCLUDED
 

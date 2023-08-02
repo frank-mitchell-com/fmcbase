@@ -22,7 +22,7 @@ TESTS=$(patsubst %.c,%.run,$(wildcard $(TESTDIR)/*.c))
 
 .PHONY: all clean test runtest
 
-all: $(LIB) test
+all: $(LIB) $(SHLIB) test
 
 test: $(TESTS)
 

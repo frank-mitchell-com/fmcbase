@@ -26,6 +26,7 @@
 #include <strings.h>
 #include "cconv.h"
 #include "csymbol.h"
+#include "crefcnt.h"
 #include "ustring.h"
 
 static void* default_alloc(void* unused, void* p, size_t nmem, size_t sz) {
@@ -49,8 +50,6 @@ static volatile u_string_alloc _alloc_func = default_alloc;
 static volatile void*          _alloc_data = NULL;
 
 struct _U_String {
-    volatile atomic_int refcnt;
-
     // Does not change after creation
     C_Symbol* encoding;
     size_t    nbytes;
@@ -76,7 +75,7 @@ static bool make_string(U_String* *sp, C_Symbol* enc, size_t len, size_t csz, co
     // TODO: Watch out for overflow from len * csz. It *should* be fine, but ...
     memcpy(sb, buf, len * csz);
 
-    s->refcnt   = 1;
+    C_Ref_Count_list(s);
     s->encoding = enc;
     s->nbytes   = len * csz;
     s->bytes    = sb;
@@ -199,46 +198,28 @@ USTR_API bool U_String_join_n(U_String* *sp, size_t n, ...) {
 }
 
 USTR_API bool U_String_is_live(U_String* s) {
-    return true;
+    return C_Ref_Count_is_listed(s);
 }
 
 USTR_API size_t U_String_references(U_String* s) {
-    if (s == NULL || !U_String_is_live(s)) return 0;
-
-    return s->refcnt;
+    return C_Ref_Count_refcount(s);
 }
 
-USTR_API bool U_String_retain(U_String* s) {
-    if (s == NULL || !U_String_is_live(s)) return false;
-    s->refcnt++;
-    return true;
+USTR_API U_String* U_String_retain(U_String* s) {
+    return (U_String*)C_Any_retain(s);
 }
 
 USTR_API bool U_String_release(U_String* *sp) {
-    U_String* s;
-
-    if (sp == NULL) return 0;
-
-    s = *sp;
-    if (s == NULL || !U_String_is_live(s)) return false;
-    if (s->refcnt > 1) {
-        s->refcnt--;
-    } else {
+    U_String* s = (sp) ? *sp : NULL;
+    bool result = C_Any_release((const void**)sp);
+    if (result && s && U_String_references(s) == 0) {
+        C_Ref_Count_delist(s);
         free_string(s);
-        (*sp) = NULL;
     }
-    return true;
+    return result;
 }
 
-USTR_API bool U_String_set(U_String* *lvalue, U_String* rvalue) {
-    U_String* oldvalue;
-
-    if (!lvalue) return false;
-
-    if (!U_String_retain(rvalue)) return false;
-
-    oldvalue = (*lvalue);
-    *lvalue = rvalue;
-    return U_String_release(&oldvalue);
+USTR_API U_String* U_String_set(U_String* *lvalue, U_String* rvalue) {
+    return (U_String*)C_Any_set((const void**)lvalue, (const void*)rvalue);
 }
 

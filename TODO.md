@@ -3,29 +3,43 @@
 ## PENDING FINAL DESIGN
 
 - common header
-- reference table (read write lock)
 - string table (read write lock)
+- `C_Port`
 
 ## PENDING IMPLEMENTATION
 
 - `C_Conv`
    - Invalid encoding detection & signalling
-
-- `C_Port`
+   - Find *n*th code point in a UTF-8 string.
+   - Find *n*th code point after *k*th byte in a UTF-8 string.
 
 - `C_Table`
    - collision metrics
 
+- `C_Ref_Table`
+   - all functions
+
+- `C_String_Table`
+   - all functions
+
 - `U_String`
+   - nearly all functions
+   - reference counting (`C_Ref_Count`)
 
 - `U_Char_Buffer`
+   - reference counting (`C_Ref_Count`)
 
 - `U_String_Array`
+   - all functions
+   - reference counting (`C_Ref_Count`)
 
 ## PENDING TESTING
 
 - `C_Conv`
   - Check endianness of UTF-16 and UTF-32
+
+- `C_Ref_Count`
+  - retain, release, set methods
 
 - `C_Symbol`
    - table lock
@@ -37,7 +51,6 @@
 
 - `U_String`
    - all functions
-   - reference counting
    - conversion to codepoints
 
 ## COMPILATION
@@ -56,52 +69,4 @@
 
 - Common API Marker
   - extern or DLL stuff
-
----
-
-## TYPElIB / EXPOBJ
-
-- datatypes
-- unignorable error codes? -> exceptions?
-
-### Pending Final Design
-
-- `E_Any`
-- `E_String` (<- `U_String`)
-- `M_Pool`
-- `M_String` (<- `U_String`)
-
-### Pending Design / XTIDL
-
-- Basic Types
-  - any
-  - associative array (a la Lua)
-  - bitset
-  - boolean [IM]
-  - character [IM]
-  - integer (<- number)
-    - smallint [IM]
-    - bigint (inf. precision?)
-  - number
-    - bigdecimal (<>- integer x10^(integer) )
-    - float (double+ precision)
-    - rational (<>- integer / integer)
-  - null [IM]
-  - string
-    - zero-length
-    - single Unicode character
-    - utf-8
-    - utf-16?
-    - utf-32?
-    - arbitrary encoding
-  - undefined [IM]
-
-- TypeLib / ExpObj Collections:
-    - bag
-    - deque
-    - array
-    - list
-    - map
-    - map, sorted
-    - queue
 
