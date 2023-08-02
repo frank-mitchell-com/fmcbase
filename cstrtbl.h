@@ -48,11 +48,6 @@ typedef struct C_String_Table C_String_Table;
  */
 typedef struct C_String_Table_Iterator C_String_Table_Iterator;
 
-/*
- * A prototype for functions to hash c strings.
- */
-typedef uint64_t (*C_String_Hash)(cstring_t ptr);
-
 /**
  * Creates a new string table with at least `minsz` capacity.
  */
@@ -62,11 +57,6 @@ void C_String_Table_new(C_String_Table* *tptr, size_t minsz);
  * The number of entries in `t`.
  */
 size_t C_String_Table_size(C_String_Table* t);
-
-/**
- * Define a hash function for all the string keys.
- */
-void C_String_Table_define_hash_function(C_String_Table* t, C_String_Hash);
 
 /**
  * Return the pointer value for `key`, or NULL if none found.

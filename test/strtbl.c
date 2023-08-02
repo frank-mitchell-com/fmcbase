@@ -57,6 +57,7 @@ static void table_put() {
 
     // Check key not in table
     lequal(C_String_Table_has(t, "key"), false);
+    lequal(0, (int)C_String_Table_size(t));
 
     // PUT key = value
     lok(C_String_Table_put(t, "key", "value", &oldvalue));
@@ -64,6 +65,7 @@ static void table_put() {
 
     // Check key = value
     lsequal("value", (const char *)C_String_Table_get(t, "key"));
+    lequal(1, (int)C_String_Table_size(t));
 
     // PUT key = value2
     lok(C_String_Table_put(t, "key", "value2", &oldvalue));
@@ -71,6 +73,7 @@ static void table_put() {
 
     // Check key = value2
     lsequal("value2", (const char*)C_String_Table_get(t, "key"));
+    lequal(1, (int)C_String_Table_size(t));
 
     teardown();
 }
@@ -106,6 +109,8 @@ static void table_put_multiple() {
         lsequal(value, (const char*)C_String_Table_get(t, key));
     }
 
+    lequal(13, (int)C_String_Table_size(t));
+
     for (int i = 0; expected[i].key != NULL; i++) {
         const char* key = expected[i].key;
         const char* value = expected[i].value;
@@ -125,11 +130,13 @@ static void table_remove() {
     lok(C_String_Table_put(t, "key", "value", NULL));
 
     lequal(C_String_Table_has(t, "key"), true);
+    lequal(1, (int)C_String_Table_size(t));
 
     lok(C_String_Table_remove(t, "key", &oldvalue));
     lsequal("value", (const char*)oldvalue);
 
     lequal(C_String_Table_has(t, "key"), false);
+    lequal(0, (int)C_String_Table_size(t));
 
     teardown();
 }

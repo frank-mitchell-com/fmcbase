@@ -21,16 +21,25 @@
  */
 
 #include <stdlib.h>
-#include "ctable.h"
 #include "creftbl.h"
 
+#define TBLMINSIZ   5
+
+typedef struct ref_pair {
+    const void *key;
+    const void *value;
+} C_Ref_Pair;
+
 struct C_Ref_Table {
-    C_Table* t;
+    C_Ref_Pair* data;
+    size_t      len;
+    size_t      npairs;
 };
 
 extern void C_Ref_Table_new(C_Ref_Table* *tptr, size_t minsz) {
-    C_Table* t;
     C_Ref_Table* self;
+    C_Ref_Pair*  data;
+    size_t       len;
 
     if (!tptr) {
         return;
@@ -41,74 +50,138 @@ extern void C_Ref_Table_new(C_Ref_Table* *tptr, size_t minsz) {
     if (!self) {
         return;
     }
-    C_Table_new(&t, minsz);
-    if (t == NULL) {
+
+    len  = (minsz > TBLMINSIZ) ? minsz : TBLMINSIZ;
+    data = calloc(len, sizeof(C_Ref_Pair));
+    if (data == NULL) {
         free(self);
         return;
     }
-    self->t = t;
+    self->data   = data;
+    self->len    = len;
+    self->npairs = 0;
 
     *tptr = self;
 }
 
-extern size_t C_Ref_Table_size(C_Ref_Table* t) {
-    return C_Table_size(t->t);
+static uint64_t hashcode(const void* k) {
+    return ((uintptr_t)k) >> 2;
 }
 
-extern const void* C_Ref_Table_get(C_Ref_Table* t, const void* k) {
-    C_Userdata key, value;
+static ssize_t find_key(C_Ref_Pair data[], size_t len, const void* k, bool search) {
+    ssize_t result = hashcode(k) % len;
 
-    C_Userdata_set_pointer(&key, k);
-    C_Userdata_clear(&value, false);
+    if (data[result].key == k) {
+        return result;
+    } else if (data[result].key == NULL) {
+        return search ? -1 : result;
+    } else {
+        const void* target = search ? k : NULL;
 
-    C_Table_get(t->t, &key, &value);
-
-    return value.ptr;
+        for (ssize_t i = (result+1) % len; i != result; i = (i+1) % len) {
+            if (data[i].key == target) {
+                return i;
+            }
+        }
+        return -1;
+    }
 }
 
-extern bool C_Ref_Table_has(C_Ref_Table* t, const void* k) {
-    C_Userdata key;
-
-    C_Userdata_set_pointer(&key, k);
-
-    return C_Table_has(t->t, &key);
+extern size_t C_Ref_Table_size(C_Ref_Table* self) {
+    return self->npairs;
 }
 
-extern bool C_Ref_Table_put(C_Ref_Table* t, const void* k, const void* v, const void* *oldvalp) {
-    C_Userdata key, value;
+extern const void* C_Ref_Table_get(C_Ref_Table* self, const void* k) {
+    ssize_t index = find_key(self->data, self->len, k, true);
+    if (index < 0) {
+        return NULL;
+    }
+    return self->data[index].value;
+}
 
-    C_Userdata_set_pointer(&key, k);
+extern bool C_Ref_Table_has(C_Ref_Table* self, const void* k) {
+    return find_key(self->data, self->len, k, true) >= 0;
+}
+
+static bool rehash(C_Ref_Table* self) {
+    size_t      oldlen = self->len;
+    C_Ref_Pair* olddata = self->data;
+    size_t      newlen = oldlen * 2 + 1;
+    C_Ref_Pair* newdata = calloc(newlen, sizeof(C_Ref_Pair));
+
+    if (newdata == NULL) {
+        return false;
+    }
+    for (size_t i = 0; i < oldlen; i++) {
+        C_Ref_Pair* curr = olddata + i;
+        if (curr->key != NULL) {
+            ssize_t j = find_key(newdata, newlen, curr->key, false);
+            if (j >= 0) {
+                newdata[j].key = curr->key;
+                newdata[j].value = curr->value;
+            } else {
+                // shouldn't happen ... what do we do?
+                free(newdata);
+                return false;
+            }
+        }
+    }
+    free(olddata);
+    self->data = newdata;
+    self->len  = newlen;
+    return true;
+}
+
+extern bool C_Ref_Table_put(C_Ref_Table* self, const void* k, const void* v, const void* *oldvalp) {
+    ssize_t index;
+
+    if (self->npairs > self->len * 0.75) {
+        if (!rehash(self)) {
+            return false;
+        }
+    }
+
+    index = find_key(self->data, self->len, k, false);
+
+    if (index < 0) {
+        return false;
+    }
 
     if (oldvalp) {
-        C_Userdata_clear(&value, false);
-        C_Table_get(t->t, &key, &value);
-        *oldvalp = value.ptr;
+        (*oldvalp) = self->data[index].value;
     }
-    C_Userdata_set_pointer(&value, v);
-    return C_Table_put(t->t, &key, &value);
+
+    if (self->data[index].key == NULL) {
+        self->npairs++;
+    }
+    self->data[index].key = k;
+    self->data[index].value = v;
+    return true;
 }
 
-extern bool C_Ref_Table_remove(C_Ref_Table* t, const void* k, const void* *oldvalp) {
-    C_Userdata key, value;
-
-    C_Userdata_set_pointer(&key, k);
+extern bool C_Ref_Table_remove(C_Ref_Table* self, const void* k, const void* *oldvalp) {
+    ssize_t index = find_key(self->data, self->len, k, true);
+    if (index < 0) {
+        return false;
+    }
 
     if (oldvalp) {
-        C_Userdata_clear(&value, false);
-        C_Table_get(t->t, &key, &value);
-        *oldvalp = value.ptr;
+        (*oldvalp) = self->data[index].value;
     }
-    return C_Table_remove(t->t, &key);
+
+    self->npairs--;
+    self->data[index].key = NULL;
+    self->data[index].value = NULL;
+    return true;
 }
 
-void C_Ref_Table_free(C_Ref_Table* *tptr) {
-    C_Table* t;
-    if (!tptr) {
+void C_Ref_Table_free(C_Ref_Table* *selfptr) {
+    C_Ref_Table* self = selfptr ? *selfptr : NULL;
+    if (!self) {
         return;
     }
-    t = (*tptr)->t;
-    C_Table_free(&t);
-    free(*tptr);
-    *tptr = NULL;
+    free(self->data);
+    free(self);
+    *selfptr = NULL;
 }
 

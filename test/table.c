@@ -111,6 +111,7 @@ static void table_add() {
     C_Userdata_clear(&actual, false);
     lok(C_Table_get(t, &key, &actual));
     lsequal(tostr(value), tostr(actual));
+    lequal(1, (int)C_Table_size(t));
 
     // Try to add the key again
     lequal(C_Table_add(t, &key, &value2), false);
@@ -119,6 +120,7 @@ static void table_add() {
     C_Userdata_clear(&actual, false);
     lok(C_Table_get(t, &key, &actual));
     lsequal(tostr(value), tostr(actual));
+    lequal(1, (int)C_Table_size(t));
 
     teardown();
 }
@@ -159,6 +161,8 @@ static void table_add_multiple() {
         lsequal(tostr(value), tostr(actual));
     }
 
+    lequal(16, (int)C_Table_size(t));
+
     for (int i = 0; expected[i].key != NULL; i++) {
         // Check key = value in table AGAIN
         C_Userdata_set_string(&key, expected[i].key);
@@ -166,6 +170,8 @@ static void table_add_multiple() {
         lok(C_Table_get(t, &key, &actual));
         lsequal(expected[i].value, (char*)actual.ptr);
     }
+
+    lequal(16, (int)C_Table_size(t));
 
     teardown();
 }
@@ -184,12 +190,14 @@ static void table_with_pointer_key() {
 
     // Check key not in table
     lequal(C_Table_has(t, &key), false);
+    lequal(0, (int)C_Table_size(t));
 
     // ADD key = value
     lok(C_Table_add(t, &key, &value));
 
     // Check key in table
     lequal(C_Table_has(t, &key), true);
+    lequal(1, (int)C_Table_size(t));
 
     strcpy(data, "still my data");
 
@@ -212,6 +220,7 @@ static void table_with_pointer_value() {
 
     // Check key not in table
     lequal(C_Table_has(t, &key), false);
+    lequal(0, (int)C_Table_size(t));
 
     // ADD key = value
     lok(C_Table_add(t, &key, &value));
@@ -221,6 +230,7 @@ static void table_with_pointer_value() {
     lok(C_Table_get(t, &key, &actual));
     lsequal(tostr(value), tostr(actual));
     lok(data == actual.ptr);
+    lequal(1, (int)C_Table_size(t));
 
     teardown();
 }
@@ -236,6 +246,7 @@ static void table_put() {
 
     // Check key not in table
     lequal(C_Table_has(t, &key), false);
+    lequal(0, (int)C_Table_size(t));
 
     // PUT key = value
     lok(C_Table_put(t, &key, &value));
@@ -244,6 +255,7 @@ static void table_put() {
     C_Userdata_clear(&actual, false);
     lok(C_Table_get(t, &key, &actual));
     lsequal(tostr(value), tostr(actual));
+    lequal(1, (int)C_Table_size(t));
 
     // PUT key = value2
     lok(C_Table_put(t, &key, &value2));
@@ -252,6 +264,7 @@ static void table_put() {
     C_Userdata_clear(&actual, false);
     lok(C_Table_get(t, &key, &actual));
     lsequal(tostr(value2), tostr(actual));
+    lequal(1, (int)C_Table_size(t));
 
     teardown();
 }
@@ -267,10 +280,12 @@ static void table_remove() {
     lok(C_Table_add(t, &key, &value));
 
     lequal(C_Table_has(t, &key), true);
+    lequal(1, (int)C_Table_size(t));
 
     lok(C_Table_remove(t, &key));
 
     lequal(C_Table_has(t, &key), false);
+    lequal(0, (int)C_Table_size(t));
 
     teardown();
 }

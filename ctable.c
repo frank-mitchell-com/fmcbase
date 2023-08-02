@@ -401,6 +401,8 @@ extern bool C_Table_remove(C_Table* t, const C_Userdata* key) {
     udfree(t, &(entry->key));
     udfree(t, &(entry->value));
 
+    t->nentries--;
+
     return true;
 }
 

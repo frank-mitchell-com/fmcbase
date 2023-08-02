@@ -92,6 +92,8 @@ static void refset_add() {
         lok(C_Ref_Set_has(t, EXPECT[i]));
     }
 
+    lequal(EXPECTSZ, (int)C_Ref_Set_size(t));
+
     for (int i = 0; i < EXPECTSZ; i++) {
         // Check key = value in table AGAIN
         lok(C_Ref_Set_has(t, EXPECT[i]));
@@ -108,10 +110,12 @@ static void refset_remove() {
     lok(C_Ref_Set_add(t, data));
 
     lequal(true, C_Ref_Set_has(t, data));
+    lequal(1, (int)C_Ref_Set_size(t));
 
     lok(C_Ref_Set_remove(t, data));
 
     lequal(false, C_Ref_Set_has(t, data));
+    lequal(0, (int)C_Ref_Set_size(t));
 
     teardown();
 }

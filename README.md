@@ -1,3 +1,5 @@
+# `libctable`: A Guide for the Perplexed #
+
 ## What is this?
 
 This is a small library of utility "pseudo-classes": tables, sets, strings,
@@ -44,8 +46,8 @@ Mac, another Unix, or embedded systems (?!?).
 
 Each pseudo-class is defined by an opaque type.  All functions creating
 and/or manipulating this type have the type name as a prefix.  The general
-pattern is `<type>_<fcn>` where *<type>* is always in upper snake case
-and *<fcn>* in lower snake case.  E.g. `C_Ref_Table_size` performs the
+pattern is "*type*`_`*fcn*" where *type* is always in upper snake case
+and *fcn* in lower snake case.  E.g. `C_Ref_Table_size` performs the
 `size` function on `C_Ref_Table*`.
 
 ### Coding Conventions
@@ -172,7 +174,7 @@ pseudo-classes can handle the rest.
 
 *Files:* ustrarr.[ch]
 
-An automatically resizing array of [U-Strings](#ustrings) to make concatenating
+An automatically resizing array of [U-Strings](#ustring) to make concatenating
 them more efficient.
 
 

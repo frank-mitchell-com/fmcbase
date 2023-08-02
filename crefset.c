@@ -144,8 +144,10 @@ static bool insert_entry(C_Ref_Set* t, const void* p) {
         }
     }
 
+    if (t->array[index] == NULL) {
+        t->nentries++;
+    }
     t->array[index] = p;
-    t->nentries++;
 
     return true;
 }
@@ -160,7 +162,6 @@ extern bool C_Ref_Set_add(C_Ref_Set* t, const void* p) {
         bool result = insert_entry(t, p);
         return result;
     }
-
     return false;
 }
 
@@ -178,6 +179,7 @@ extern bool C_Ref_Set_remove(C_Ref_Set* t, const void* p) {
     index = find_entry(t, p);
     if (index >= 0) {
         t->array[index] = NULL;
+        t->nentries--;
         return true;
     }
     return false;
