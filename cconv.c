@@ -24,10 +24,109 @@
 
 #include <errno.h>
 #include <iconv.h>
+#include <stdlib.h>
 #include <string.h>
 #include "cconv.h"
 
 #define OCTET(x) ((uint8_t)(0xff & (x)))
+
+/* --------------------- Charset Classification --------------------------*/
+
+typedef struct char_type_record {
+    const char*        csname;
+    const Charset_Type type;
+} Char_Type_Record;
+
+// TODO: Translate the aliases in /usr/lib/gconv/gconv-modules to this table.
+// (Or on my machine /usr/lib/x86_64-linux-gnu/gconv/gconv-modules and
+// /usr/lib32/gconv/gconv-modules)
+
+Char_Type_Record _charset_type_map[] = {
+    { "",                   CHARSET_UNKNOWN },
+    { "ASCII",              CHARSET_ASCII },
+    { "ISO_8859-1",         CHARSET_LATIN_1 },
+    { "ISO_8859-1:1987",    CHARSET_LATIN_1 },
+    { "ISO_8859-2",         CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-2:1987",    CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-3",         CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-3:1988",    CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-4",         CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-4:1988",    CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-5",         CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-5:1988",    CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-6",         CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-6:1987",    CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-7",         CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-7:1987",    CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-7:2003",    CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-8",         CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-8L1988",    CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-9",         CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-9:1989",    CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-9E",        CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-10",        CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-10:1992",   CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-14",        CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-14:1998",   CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-15",        CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-15:1998",   CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-16",        CHARSET_LATIN_2_PLUS },
+    { "ISO_8859-16:2001",   CHARSET_LATIN_2_PLUS },
+    { "LATIN1",             CHARSET_LATIN_1 },
+    { "LATIN2",             CHARSET_LATIN_2_PLUS },
+    { "LATIN3",             CHARSET_LATIN_2_PLUS },
+    { "LATIN4",             CHARSET_LATIN_2_PLUS },
+    { "LATIN5",             CHARSET_LATIN_2_PLUS },
+    { "LATIN6",             CHARSET_LATIN_2_PLUS },
+    { "LATIN7",             CHARSET_LATIN_2_PLUS },
+    { "LATIN8",             CHARSET_LATIN_2_PLUS },
+    { "LATIN9",             CHARSET_LATIN_2_PLUS },
+    { "UCS-2",              CHARSET_UTF_16 },
+    { "UCS-2BE",            CHARSET_UTF_16 },
+    { "UCS-2LE",            CHARSET_UTF_16 },
+    { "UCS-4",              CHARSET_UTF_32 },
+    { "UCS-4BE",            CHARSET_UTF_32 },
+    { "UCS-4LE",            CHARSET_UTF_32 },
+    { "US-ASCII",           CHARSET_ASCII },
+    { "UTF-16",             CHARSET_UTF_16 },
+    { "UTF-16BE",           CHARSET_UTF_16BE },
+    { "UTF-16LE",           CHARSET_UTF_16LE },
+    { "UTF-32",             CHARSET_UTF_32 },
+    { "UTF-32BE",           CHARSET_UTF_32BE },
+    { "UTF-32LE",           CHARSET_UTF_32LE },
+    { "UTF-7",              CHARSET_MULTI_BYTE }, // not really UTF-8
+    { "UTF-8",              CHARSET_UTF_8 },
+    { "UTF16",              CHARSET_UTF_16 },
+    { "UTF16BE",            CHARSET_UTF_16BE },
+    { "UTF16LE",            CHARSET_UTF_16LE },
+    { "UTF32",              CHARSET_UTF_32 },
+    { "UTF32BE",            CHARSET_UTF_32BE },
+    { "UTF32LE",            CHARSET_UTF_32LE },
+    { "UTF7",               CHARSET_MULTI_BYTE }, // not really UTF-8
+    { "UTF8",               CHARSET_UTF_8 },
+    { "\x7F",               CHARSET_UNKNOWN }
+};
+
+const int CHARSET_TYPE_MAP_SIZE
+                   = sizeof(_charset_type_map) / sizeof (Char_Type_Record);
+
+int ctr_compare(const void* csname, const void* rec) {
+    return strcasecmp((const char*)csname, 
+                        ((const Char_Type_Record*)rec)->csname);
+}
+
+extern Charset_Type C_Conv_charset_type(const char* csname) {
+    Char_Type_Record* rec
+        = (Char_Type_Record*)bsearch(csname, 
+                                        _charset_type_map, 
+                                        CHARSET_TYPE_MAP_SIZE,
+                                        sizeof(Char_Type_Record),
+                                        ctr_compare);
+    if (rec == NULL) {
+        return CHARSET_UNKNOWN;
+    }
+    return rec->type;
+}
 
 /* ---------------------- Buffer Size Helpers --------------------------- */
 

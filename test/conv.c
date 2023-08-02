@@ -340,6 +340,15 @@ static void conv_utf16_to_32() {
     free_strings();
 }
 
+static void conv_charset_type() {
+    lequal(CHARSET_ASCII, C_Conv_charset_type("ascii"));
+    lequal(CHARSET_ASCII, C_Conv_charset_type("us-ascii"));
+    lequal(CHARSET_UTF_8, C_Conv_charset_type("utf8"));
+    lequal(CHARSET_UTF_32, C_Conv_charset_type("utf32"));
+    lequal(CHARSET_UTF_16, C_Conv_charset_type("ucs-2"));
+    lequal(CHARSET_LATIN_1, C_Conv_charset_type("latin1"));
+}
+
 /**
  * TODO: More error conditions and bad output.
  * - run out of output buffer
@@ -355,6 +364,7 @@ int main (int argc, char* argv[]) {
     lrun("cconv_utf16_to_8", conv_utf16_to_8);
     lrun("cconv_utf32_to_16", conv_utf32_to_16);
     lrun("cconv_utf16_to_32", conv_utf16_to_32);
+    lrun("cconv_charset_type", conv_charset_type);
     lrun("test_code_smoke", string_smoke);
     lresults();
     return lfails != 0;

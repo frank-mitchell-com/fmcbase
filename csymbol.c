@@ -22,7 +22,6 @@
 
 #include <string.h>
 #include <strings.h>
-#include <stdatomic.h>
 #include <stdlib.h>
 #include "ctable.h"
 #include "crefcnt.h"

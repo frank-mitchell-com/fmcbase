@@ -33,6 +33,50 @@
 
 typedef uint16_t utf16_t;
 
+/**
+ * Classification scheme for names of character sets.
+ * Many encodings have several valid names according to iconv and others;
+ * "ASCII" and "US-ASCII" designate the same encoding,
+ * as does "UCS-8" and "UTF-8".
+ */
+typedef enum Charset_Type {
+    /** 7-bit ASCII */
+    CHARSET_ASCII,
+    /* ISO-Latin-1, and all its aliases */
+    CHARSET_LATIN_1,
+    /* ISO-Latin-2 through -16(?), and all *their* aliases */
+    CHARSET_LATIN_2_PLUS,
+    /* Other single byte encodings not based on the Latin alphabet */
+    CHARSET_SINGLE_BYTE,
+    /* Other multi-byte encodings, e.g. Shift-JIS */
+    CHARSET_MULTI_BYTE,
+    /* UTF-8, UCS-8, and variants */
+    CHARSET_UTF_8,
+    /* UTF-16, UCS-16, and variants */
+    CHARSET_UTF_16,
+    /* UTF-16, UCS-16, and variants */
+    CHARSET_UTF_16BE,
+    /* UTF-16, UCS-16, and variants */
+    CHARSET_UTF_16LE,
+    /* UTF-32, UCS-32, and variants */
+    CHARSET_UTF_32,
+    /* UTF-32, UCS-32, and variants */
+    CHARSET_UTF_32BE,
+    /* UTF-32, UCS-32, and variants */
+    CHARSET_UTF_32LE,
+    /** Encoding does not have a type assigned. */
+    CHARSET_UNKNOWN = 0xFF,
+} Charset_Type;
+
+/**
+ * Classifies a character set `csname` to facilitate handling.
+ * Many character sets have aliases or slight variants with technical
+ * differences; others have characteristics that make them less or more
+ * likely to be converted to Unicode for ease of processing.
+ * Returns the classification.
+ */
+Charset_Type C_Conv_charset_type(const char* csname);
+
 bool C_Conv_is_ascii(size_t sz, const char* buf);
 
 bool C_Conv_is_utf16(size_t sz, const wchar_t* buf);

@@ -43,13 +43,13 @@ static void teardown() {
     C_Ref_Table_free(&t);
 }
 
-static void table_smoke() {
+static void reftbl_smoke() {
     setup();
 
     teardown();
 }
 
-static void table_put() {
+static void reftbl_put() {
     const void* value;
     const void* oldvalue = "splunge";
 
@@ -75,7 +75,7 @@ static void table_put() {
     teardown();
 }
 
-static void table_put_multiple() {
+static void reftbl_put_multiple() {
     kvpair expected[] = {
         { "alpha",   "alpha" },
         { "bravo",   "bravo" },
@@ -117,7 +117,7 @@ static void table_put_multiple() {
     teardown();
 }
 
-static void table_remove() {
+static void reftbl_remove() {
     const void* oldvalue = "-not value-";
 
     setup();
@@ -135,10 +135,10 @@ static void table_remove() {
 }
 
 int main (int argc, char* argv[]) {
-    lrun("table_smoke", table_smoke);
-    lrun("table_put", table_put);
-    lrun("table_put_multiple", table_put_multiple);
-    lrun("table_remove", table_remove);
+    lrun("reftbl_smoke", reftbl_smoke);
+    lrun("reftbl_put", reftbl_put);
+    lrun("reftbl_put_multiple", reftbl_put_multiple);
+    lrun("reftbl_remove", reftbl_remove);
     lresults();
     return lfails != 0;
 }

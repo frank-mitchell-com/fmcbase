@@ -20,12 +20,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include "cthread.h"
 #include "cconv.h"
-#include "csymbol.h"
 #include "crefcnt.h"
 #include "ustring.h"
 
@@ -44,56 +43,113 @@ static void* default_alloc(void* unused, void* p, size_t nmem, size_t sz) {
     return NULL;
 }
 
-// TODO: Protect these with a mutex?
-
+RWLOCK_DECL(_alloc_lock);
 static volatile u_string_alloc _alloc_func = default_alloc;
 static volatile void*          _alloc_data = NULL;
 
 struct _U_String {
     // Does not change after creation
-    C_Symbol* encoding;
-    size_t    nbytes;
-    uint8_t*  bytes;
+    size_t    wcs_len;
+    wchar_t*  wcs_arr;
 };
 
+// TODO: Implement compressed strings, i.e. use arrays of uint16_t 
+// or uint8_t where the characters fit entirely into UCS-2 (sans surrogates),
+// Latin-1, or ASCII.  See Java 9 java.lang.String for inspiration.
+
+static void* ustr_alloc(size_t nm, size_t sz) {
+    void* result;
+    RWLOCK_ACQ_READ(_alloc_lock);
+    result = _alloc_func((void *)_alloc_data, NULL, nm, sz);
+    RWLOCK_RELEASE(_alloc_lock);
+    return result;
+}
+
+static void* ustr_free(void* p) {
+    void* result;
+    RWLOCK_ACQ_READ(_alloc_lock);
+    result = _alloc_func((void *)_alloc_data, p, 0, 0);
+    RWLOCK_RELEASE(_alloc_lock);
+    return result;
+}
+
+static bool make_utf32_string(C_Symbol* enc, size_t insz, const octet_t* inbuf, size_t *outszp, wchar_t* *outbufp) {
+    const char* encname 
+        = (const char*)C_Symbol_as_utf8_string(enc, NULL);
+    size_t read, written, offset;
+    size_t ulen;
+    wchar_t *ubuf;
+    size_t bufsz = insz+2;
+    wchar_t buffer[bufsz];
+
+    written = C_Conv_transcode(encname, "UTF-32", 
+                                    insz, 
+                                    (char *)inbuf, 
+                                    bufsz * sizeof(wchar_t), 
+                                    (char *)buffer, 
+                                    &read);
+    // TODO: Check if read == insz
+    if (read != insz) goto error;
+    
+    ulen = written/sizeof(wchar_t);
+    ubuf = ustr_alloc(ulen+1, sizeof(wchar_t));
+    if (!ubuf) goto error;
+
+    if (buffer[0] == L'\uFEFF') {
+        offset = 1;
+    } else {
+        offset = 0;
+    }
+
+    bzero(ubuf, ulen+1);
+    memmove(ubuf, buffer+offset, (ulen-offset) * sizeof(wchar_t));
+    ubuf[ulen-offset] = 0;
+
+    (*outszp)  = ulen-offset;
+    (*outbufp) = ubuf;
+    return true;
+error:
+    (*outszp)  = 0;
+    (*outbufp) = NULL;
+    return false;
+}
+
 static bool make_string(U_String* *sp, C_Symbol* enc, size_t len, size_t csz, const void* buf) {
-    octet_t* sb;
-    U_String* s;
+    U_String* s = NULL;
+    size_t   ul = 0;
+    wchar_t* ub = NULL;
 
     if (sp == NULL || enc == NULL || buf == NULL) return false;
 
     *sp = NULL;
 
-    s = (U_String *)_alloc_func((void *)_alloc_data, NULL, 1, sizeof(U_String));
-    if (s == NULL) return false;
+    s = (U_String *)ustr_alloc(1, sizeof(U_String));
+    if (s == NULL) goto error;
 
-    sb = _alloc_func((void *)_alloc_data, NULL, len + 1, csz);
-    if (s == NULL) {
-        free(s);
-        return false;
-    }
-    // TODO: Watch out for overflow from len * csz. It *should* be fine, but ...
-    memcpy(sb, buf, len * csz);
+    if (!make_utf32_string(enc, len * csz, buf, &ul, &ub)) goto error;
 
     C_Ref_Count_list(s);
-    s->encoding = enc;
-    s->nbytes   = len * csz;
-    s->bytes    = sb;
+    s->wcs_len = ul;
+    s->wcs_arr = ub;
 
     *sp = s;
     return true;
+error:
+    if (ub) ustr_free(ub);
+    if (s) ustr_free(s);
+    return false;
 }
 
 static void free_string(U_String* s) {
-    free(s->bytes);
+    free(s->wcs_arr);
     free(s);
 }
 
-USTR_API void U_String_set_allocator(u_string_alloc func, void *data, bool local) {
-    // TODO: Make thread local on request
-    // TODO: Make thread-safe
+USTR_API void U_String_set_allocator(u_string_alloc func, void *data) {
+    RWLOCK_ACQ_WRITE(_alloc_lock);
     _alloc_data = data;
     _alloc_func = func;
+    RWLOCK_RELEASE(_alloc_lock);
 }
 
 static C_Symbol* lookup_symbol(const char* str) {
@@ -109,7 +165,7 @@ USTR_API bool U_String_new_ascii(U_String* *sp, size_t sz, const char* buf) {
     } else {
         enc = lookup_symbol("UTF-8");
     }
-    return make_string(sp, enc, sz, sizeof(octet_t*), buf);
+    return make_string(sp, enc, sz, sizeof(octet_t), buf);
 }
 
 USTR_API bool U_String_new_utf8(U_String* *sp, size_t sz, const utf8_t* buf) {
@@ -136,37 +192,26 @@ USTR_API bool U_String_new_from_cstring(U_String* *sp, const char* cstr) {
 }
 
 USTR_API wchar_t U_String_char_at(U_String* s, size_t i) {
-    return 0;
-}
-
-USTR_API C_Symbol* U_String_encoding(U_String* s) {
-    return s->encoding;
-}
-
-USTR_API const char* U_String_encoding_name(U_String* s) {
-    return (const char*)C_Symbol_as_utf8_string(s->encoding, NULL);
+    if (i >= s->wcs_len) {
+        return 0;
+    } else {
+        return s->wcs_arr[i];
+    }
 }
 
 USTR_API size_t U_String_length(U_String* s) {
-    return 0;
-}
-
-USTR_API size_t U_String_to_byte(U_String* s, size_t offset, size_t max, octet_t* buf) {
-    return (size_t)memcpy(&(buf[max]), s->bytes, (max < s->nbytes) ? max : s->nbytes);
+    return s->wcs_len;
 }
 
 USTR_API size_t U_String_to_utf8(U_String* s, size_t offset, size_t max, utf8_t* buf) {
-    const char* encname = U_String_encoding_name(s);
-    return C_Conv_transcode(encname, "UTF-8", 
-            s->nbytes, (char*)s->bytes, 
-            max, (char*)(&(buf[offset])), NULL);
+    // Need to write the final null byte.
+    return C_Conv_utf32_to_8(s->wcs_len+1, s->wcs_arr, max, (char*)buf+offset);
 }
 
 USTR_API size_t U_String_to_utf32(U_String* s, size_t offset, size_t max, wchar_t* buf) {
-    const char* encname = U_String_encoding_name(s);
-    return C_Conv_transcode(encname, "UTF-32", 
-            s->nbytes, (char*)s->bytes, 
-            max * sizeof(wchar_t), (char*)(&(buf[offset])), NULL);
+    // Need to write the final null byte.
+    size_t safesz = (max < s->wcs_len+1) ? max : s->wcs_len+1;
+    return (size_t)wmemcpy(buf+offset, s->wcs_arr, safesz);
 }
 
 USTR_API size_t U_String_each(U_String* s, void* data, u_iterator f) {

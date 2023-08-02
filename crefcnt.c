@@ -20,10 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include <pthread.h>
 #include <string.h>
 #include <strings.h>
-#include <stdatomic.h>
 #include <stdlib.h>
 #include "cthread.h"
 #include "ctable.h"

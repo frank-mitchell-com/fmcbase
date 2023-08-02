@@ -74,7 +74,7 @@ typedef void* (*u_string_alloc)(void* data, void *p, size_t nmemb, size_t size);
  * if false, all String instances in the current memory space will uses the
  * allocator.
  */
-USTR_API void U_String_set_allocator(u_string_alloc a, void *data, bool local);
+USTR_API void U_String_set_allocator(u_string_alloc a, void *data);
 
 
 /**
