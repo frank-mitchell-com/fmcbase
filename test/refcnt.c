@@ -30,7 +30,7 @@
 #define STRBUFSIZ   20
 
 static void refcnt_count() {
-    const char* tobj = strdup("this is only a test");
+    char* tobj = strdup("this is only a test");
     uint32_t result = 0;
 
     C_Ref_Count_list(tobj);
@@ -71,10 +71,68 @@ static void refcnt_count() {
     C_Ref_Count_delist(tobj);
     lequal(1, C_Ref_Count_refcount(tobj));
     lequal(false, C_Ref_Count_is_listed(tobj));
+
+    free(tobj);
+}
+
+static void refcnt_retain() {
+    char* tobj  = strdup("this is only a test");
+    const void* tobj2 = NULL;
+    const void* result;
+
+    C_Ref_Count_list(tobj);
+    lequal(1, C_Ref_Count_refcount(tobj));
+    lok(C_Ref_Count_is_listed(tobj));
+
+    result = C_Any_retain(tobj);
+    lok(tobj == result);
+    lequal(2, C_Ref_Count_refcount(tobj));
+
+    C_Any_set(&tobj2, tobj);
+    lok(tobj == tobj2);
+    lequal(3, C_Ref_Count_refcount(tobj));
+
+    C_Any_set(&tobj2, NULL);
+    lok(NULL == tobj2);
+    lequal(2, C_Ref_Count_refcount(tobj));
+
+    C_Any_release(&result);
+    lok(NULL == result);
+    lequal(1, C_Ref_Count_refcount(tobj));
+
+    C_Ref_Count_delist(tobj);
+    free(tobj);
+}
+
+static const void* _onzero_expect = NULL;
+static bool        _onzero_called = false;
+
+static void test_onzero(void* p) {
+    _onzero_called = true;
+    lok(_onzero_expect == p);
+}
+
+static void refcnt_onzero() {
+    char* tobj  = strdup("this is only a test");
+
+    C_Ref_Count_list(tobj);
+    lequal(true, C_Ref_Count_is_listed(tobj));
+
+    C_Ref_Count_on_zero(tobj, &test_onzero);
+
+    _onzero_called = false;
+    _onzero_expect = tobj;
+    C_Ref_Count_decrement(tobj);
+
+    lok(_onzero_called);
+    lequal(false, C_Ref_Count_is_listed(tobj));
+    lequal(1, C_Ref_Count_refcount(tobj));
 }
 
 int main (int argc, char* argv[]) {
     lrun("refcnt_count", refcnt_count);
+    lrun("refcnt_retain", refcnt_retain);
+    lrun("refcnt_onzero", refcnt_onzero);
     lresults();
     return lfails != 0;
 }

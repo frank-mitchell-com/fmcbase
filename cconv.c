@@ -30,125 +30,89 @@
 
 #define OCTET(x) ((uint8_t)(0xff & (x)))
 
-/* --------------------- Charset Classification --------------------------*/
+/* ---------------------- String Type Helpers --------------------------- */
 
-typedef struct char_type_record {
-    const char*        csname;
-    const Charset_Type type;
-} Char_Type_Record;
+#define MAX(a, b)   (((a) > (b)) ? (a) : (b))
 
-// TODO: Translate the aliases in /usr/lib/gconv/gconv-modules to this table.
-// (Or on my machine /usr/lib/x86_64-linux-gnu/gconv/gconv-modules and
-// /usr/lib32/gconv/gconv-modules)
-
-Char_Type_Record _charset_type_map[] = {
-    { "",                   CHARSET_UNKNOWN },
-    { "ASCII",              CHARSET_ASCII },
-    { "ISO_8859-1",         CHARSET_LATIN_1 },
-    { "ISO_8859-1:1987",    CHARSET_LATIN_1 },
-    { "ISO_8859-2",         CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-2:1987",    CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-3",         CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-3:1988",    CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-4",         CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-4:1988",    CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-5",         CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-5:1988",    CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-6",         CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-6:1987",    CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-7",         CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-7:1987",    CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-7:2003",    CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-8",         CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-8L1988",    CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-9",         CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-9:1989",    CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-9E",        CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-10",        CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-10:1992",   CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-14",        CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-14:1998",   CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-15",        CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-15:1998",   CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-16",        CHARSET_LATIN_2_PLUS },
-    { "ISO_8859-16:2001",   CHARSET_LATIN_2_PLUS },
-    { "LATIN1",             CHARSET_LATIN_1 },
-    { "LATIN2",             CHARSET_LATIN_2_PLUS },
-    { "LATIN3",             CHARSET_LATIN_2_PLUS },
-    { "LATIN4",             CHARSET_LATIN_2_PLUS },
-    { "LATIN5",             CHARSET_LATIN_2_PLUS },
-    { "LATIN6",             CHARSET_LATIN_2_PLUS },
-    { "LATIN7",             CHARSET_LATIN_2_PLUS },
-    { "LATIN8",             CHARSET_LATIN_2_PLUS },
-    { "LATIN9",             CHARSET_LATIN_2_PLUS },
-    { "UCS-2",              CHARSET_UTF_16 },
-    { "UCS-2BE",            CHARSET_UTF_16 },
-    { "UCS-2LE",            CHARSET_UTF_16 },
-    { "UCS-4",              CHARSET_UTF_32 },
-    { "UCS-4BE",            CHARSET_UTF_32 },
-    { "UCS-4LE",            CHARSET_UTF_32 },
-    { "US-ASCII",           CHARSET_ASCII },
-    { "UTF-16",             CHARSET_UTF_16 },
-    { "UTF-16BE",           CHARSET_UTF_16BE },
-    { "UTF-16LE",           CHARSET_UTF_16LE },
-    { "UTF-32",             CHARSET_UTF_32 },
-    { "UTF-32BE",           CHARSET_UTF_32BE },
-    { "UTF-32LE",           CHARSET_UTF_32LE },
-    { "UTF-7",              CHARSET_MULTI_BYTE }, // not really UTF-8
-    { "UTF-8",              CHARSET_UTF_8 },
-    { "UTF16",              CHARSET_UTF_16 },
-    { "UTF16BE",            CHARSET_UTF_16BE },
-    { "UTF16LE",            CHARSET_UTF_16LE },
-    { "UTF32",              CHARSET_UTF_32 },
-    { "UTF32BE",            CHARSET_UTF_32BE },
-    { "UTF32LE",            CHARSET_UTF_32LE },
-    { "UTF7",               CHARSET_MULTI_BYTE }, // not really UTF-8
-    { "UTF8",               CHARSET_UTF_8 },
-    { "\x7F",               CHARSET_UNKNOWN }
-};
-
-const int CHARSET_TYPE_MAP_SIZE
-                   = sizeof(_charset_type_map) / sizeof (Char_Type_Record);
-
-int ctr_compare(const void* csname, const void* rec) {
-    return strcasecmp((const char*)csname, 
-                        ((const Char_Type_Record*)rec)->csname);
+extern bool C_Conv_is_ascii(size_t sz, const char* buf) {
+     for (int i = 0; i < sz; i++) {
+         if (buf[i] < 0 || buf[i] > 127) {
+             return false;
+         }
+     }
+     return true;
 }
 
-extern Charset_Type C_Conv_charset_type(const char* csname) {
-    Char_Type_Record* rec
-        = (Char_Type_Record*)bsearch(csname, 
-                                        _charset_type_map, 
-                                        CHARSET_TYPE_MAP_SIZE,
-                                        sizeof(Char_Type_Record),
-                                        ctr_compare);
-    if (rec == NULL) {
-        return CHARSET_UNKNOWN;
+extern unsigned int C_Conv_min_bytes(size_t sz, const utf32_t* buf) {
+    unsigned int result = sz > 0 ? 1 : 0;
+    for (int i = 0; i < sz; i++) {
+        utf32_t cp = buf[i];
+
+        // TODO: What if cp is in the wrong endian order ...?
+        if (cp > 0xFFFF) {
+            result = MAX(4, result);
+        } else if (cp > 0xFF) {
+            result = MAX(2, result);
+        } else {
+            // ASCII or Latin-1
+            result = MAX(1, result);
+        }
     }
-    return rec->type;
+    return result;
+}
+
+extern unsigned int C_Conv_min_bytes_utf16(size_t sz, const utf16_t* buf) {
+    unsigned int result = sz > 0 ? 1 : 0;
+    for (int i = 0; i < sz; i++) {
+        utf16_t cp = buf[i];
+
+        // TODO: What if cp is in the wrong endian order ...?
+        if (cp >= 0xD800 && cp <= 0xDFFF) {
+            // Surrogate for plane 1+
+            result = MAX(4, result);
+        } else if (cp > 0xFF) {
+            result = MAX(2, result);
+        } else {
+            // ASCII or Latin-1
+            result = MAX(1, result);
+        }
+    }
+    return result;
+}
+
+extern unsigned int C_Conv_min_bytes_utf8(size_t sz, const utf8_t* buf) {
+    unsigned int result = sz > 0 ? 1 : 0;
+    for (int i = 0; i < sz; i++) {
+        if (buf[i] >= 0xF0) {
+            // Encodes a codepoint greater than 0xFFFF
+            result = MAX(4, result);
+        } else if (buf[i] > 0xC3) {
+            // 0xC3 marks the boundary between Latin-1 and two-byte encodings.
+            result = MAX(2, result);
+        } else if (buf[i] > 0x7F && buf[i] < 0xC0) {
+            // ignore continuing bytes
+        } else {
+            result = MAX(1, result);
+        }
+    }
+    return result;
 }
 
 /* ---------------------- Buffer Size Helpers --------------------------- */
 
-extern bool C_Conv_is_ascii(size_t sz, const char* buf) {
-    for (int i = 0; i < sz; i++) {
-        if (buf[i] > 127) {
-            return false;
-        }
-    }
-    return true;
+static inline bool is_high_surrogate(utf16_t v) {
+    return v >= 0xD800 && v <= 0xDBFF;
 }
 
-extern bool C_Conv_is_utf16(size_t sz, const wchar_t* buf) {
-    for (int i = 0; i < sz; i++) {
-        if (buf[i] > 0xFFFF) {
-            return false;
-        }
-    }
-    return true;
+static inline bool is_low_surrogate(utf16_t v) {
+    return v >= 0xDC00 && v <= 0xDFFF;
 }
 
-extern size_t C_Conv_utf8_to_16_length(size_t sz, const char* buf, size_t *csz) {
+static inline bool is_surrogate(utf16_t v) {
+    return v >= 0xD800 && v <= 0xDFFF;
+}
+
+extern size_t C_Conv_utf8_to_16_length(size_t sz, const utf8_t* buf, size_t *csz) {
     int i, result = 0;
     for (i = 0; i < sz; i++) {
         uint32_t c = OCTET(buf[i]);
@@ -166,14 +130,14 @@ extern size_t C_Conv_utf8_to_16_length(size_t sz, const char* buf, size_t *csz) 
     return result;
 }
 
-extern size_t C_Conv_utf8_to_32_length(size_t sz, const char* buf, size_t *csz) {
+extern size_t C_Conv_utf8_to_32_length(size_t sz, const utf8_t* buf, size_t *csz) {
     int i, result = 0;
     for (i = 0; i < sz; i++) {
         uint32_t c = OCTET(buf[i]);
         // TODO: Doesn't check if each lead byte has the right number of
         // trailing bytes, especially at the end.
         if (c <= 127 || c >= 0xC0) {
-            // Start of a code point beween U+0000 and U+FFFF
+            // Start of a code point beween U+0000 and U+10FFFF
             result++;
         }
     }
@@ -184,11 +148,15 @@ extern size_t C_Conv_utf8_to_32_length(size_t sz, const char* buf, size_t *csz) 
 extern size_t C_Conv_utf16_to_8_length(size_t sz, const utf16_t* buf, size_t *csz) {
     int i, result = 0;
     for (i = 0; i < sz; i++) {
-        wchar_t c = buf[i];
+        utf32_t c = buf[i];
         if (c <= 0x7f) {
             result += 1;
         } else if (c <= 0x7ff) {
             result += 2;
+        } else if (is_high_surrogate(c)) {
+            result += 4;
+        } else if (is_low_surrogate(c)) {
+            // add nothing
         } else {
             result += 3;
         }
@@ -197,10 +165,10 @@ extern size_t C_Conv_utf16_to_8_length(size_t sz, const utf16_t* buf, size_t *cs
     return result;
 }
 
-extern size_t C_Conv_utf32_to_8_length(size_t sz, const wchar_t* buf, size_t *csz) {
+extern size_t C_Conv_utf32_to_8_length(size_t sz, const utf32_t* buf, size_t *csz) {
     int i, result = 0;
     for (i = 0; i < sz; i++) {
-        wchar_t c = buf[i];
+        utf32_t c = buf[i];
         if (c <= 0x7f) {
             result += 1;
         } else if (c <= 0x7ff) {
@@ -218,7 +186,7 @@ extern size_t C_Conv_utf32_to_8_length(size_t sz, const wchar_t* buf, size_t *cs
 
 /* -------------------------- UTF-x Conversions -------------------------- */
 
-static bool has_conbytes(const char* buf, int i, size_t count, size_t max) {
+static bool has_conbytes(const utf8_t* buf, int i, size_t count, size_t max) {
     for (int k = 1; k <= count; k++) {
         if (i+k >= max) {
             return false;
@@ -231,26 +199,26 @@ static bool has_conbytes(const char* buf, int i, size_t count, size_t max) {
     return true;
 }
 
-static int read_utf8(wchar_t* cpp, size_t insz, const char* inbuf, size_t i) {
+static int read_utf8(utf32_t* cpp, size_t insz, const utf8_t* inbuf, size_t i) {
     uint8_t c = OCTET(inbuf[i]);
     if (c <= 0x7F) {
         (*cpp) = c;
         return 1;
     } else if (c >= 0xC0 && c < 0xE0 && has_conbytes(inbuf, i, 1, insz)) {
         uint32_t c2 = OCTET(inbuf[i+1]);
-        (*cpp) = (wchar_t)(((c & 0x1F) << 6) | (c2 & 0x3F));
+        (*cpp) = (utf32_t)(((c & 0x1F) << 6) | (c2 & 0x3F));
         return 2;
     } else if (c >= 0xE0 && c < 0xF0 && has_conbytes(inbuf, i, 2, insz)) {
         uint32_t c2 = OCTET(inbuf[i+1]);
         uint32_t c3 = OCTET(inbuf[i+2]);
         (*cpp) = 
-            (wchar_t)(((c & 0x0F) << 12) | ((c2 & 0x3F) << 6) | (c3 & 0x3F));
+            (utf32_t)(((c & 0x0F) << 12) | ((c2 & 0x3F) << 6) | (c3 & 0x3F));
         return 3;
     } else if (c >= 0xF0 && c < 0xF8 && has_conbytes(inbuf, i, 3, insz)) {
         uint32_t c2 = OCTET(inbuf[i+1]);
         uint32_t c3 = OCTET(inbuf[i+2]);
         uint32_t c4 = OCTET(inbuf[i+3]);
-        (*cpp) = (wchar_t)(((c & 0x07) << 18) 
+        (*cpp) = (utf32_t)(((c & 0x07) << 18) 
                         | ((c2 & 0x3F) << 12) 
                         | ((c3 & 0x3F) << 6) 
                         | (c4 & 0x3F));
@@ -260,7 +228,7 @@ static int read_utf8(wchar_t* cpp, size_t insz, const char* inbuf, size_t i) {
         uint32_t c3 = OCTET(inbuf[i+2]);
         uint32_t c4 = OCTET(inbuf[i+3]);
         uint32_t c5 = OCTET(inbuf[i+4]);
-        (*cpp) = (wchar_t)(((c & 0x03) << 24) 
+        (*cpp) = (utf32_t)(((c & 0x03) << 24) 
                         | ((c2 & 0x3F) << 18) 
                         | ((c3 & 0x3F) << 12) 
                         | ((c4 & 0x3F) << 6)
@@ -272,7 +240,7 @@ static int read_utf8(wchar_t* cpp, size_t insz, const char* inbuf, size_t i) {
         uint32_t c4 = OCTET(inbuf[i+3]);
         uint32_t c5 = OCTET(inbuf[i+4]);
         uint32_t c6 = OCTET(inbuf[i+5]);
-        (*cpp) = (wchar_t)(((c & 0x03) << 30) 
+        (*cpp) = (utf32_t)(((c & 0x03) << 30) 
                         | ((c2 & 0x3F) << 24) 
                         | ((c3 & 0x3F) << 28) 
                         | ((c4 & 0x3F) << 12)
@@ -284,7 +252,7 @@ static int read_utf8(wchar_t* cpp, size_t insz, const char* inbuf, size_t i) {
     return 0;
 }
 
-static int write_utf8(wchar_t cp, size_t outsz, char* outbuf, size_t j) {
+static int write_utf8(utf32_t cp, size_t outsz, utf8_t* outbuf, size_t j) {
     if (cp <= 0x7f) {
         outbuf[j] = cp;
         return 1;
@@ -325,11 +293,11 @@ static int write_utf8(wchar_t cp, size_t outsz, char* outbuf, size_t j) {
     return 0;
 }
 
-extern size_t C_Conv_utf8_to_32(size_t insz, const char* inbuf, size_t outsz, wchar_t* outbuf) {
+extern size_t C_Conv_utf8_to_32(size_t insz, const utf8_t* inbuf, size_t outsz, utf32_t* outbuf) {
     size_t i = 0;
     size_t j;
     for (j = 0; i < insz && j < outsz; j++) {
-        wchar_t cp = 0;
+        utf32_t cp = 0;
         int inci = read_utf8(&cp, insz, inbuf, i);
 
         if (inci <= 0) {
@@ -342,39 +310,27 @@ extern size_t C_Conv_utf8_to_32(size_t insz, const char* inbuf, size_t outsz, wc
     return j;
 }
 
-static bool is_high_surrogate(utf16_t v) {
-    return v >= 0xD800 && v <= 0xDBFF;
-}
-
-static bool is_low_surrogate(utf16_t v) {
-    return v >= 0xDC00 && v <= 0xDFFF;
-}
-
-static bool is_surrogate(utf16_t v) {
-    return v >= 0xD800 && v <= 0xDFFF;
-}
-
-static utf16_t high_surrogate(wchar_t v) {
+static utf16_t high_surrogate(utf32_t v) {
     return ((v - 0x10000) >> 10) + 0xD800;
 }
 
-static utf16_t low_surrogate(wchar_t v) {
+static utf16_t low_surrogate(utf32_t v) {
     return (v - 0x10000) + 0xDC00;
 }
 
-static wchar_t surrogate_pair(utf16_t high, utf16_t low) {
-    return (wchar_t)0x10000 
+static utf32_t surrogate_pair(utf16_t high, utf16_t low) {
+    return (utf32_t)0x10000 
                 + (((high - 0xD800) << 10)) 
                 + ((low - 0xDC00));
 }
 
-static int read_utf16(wchar_t *cpp, size_t insz, const utf16_t* inbuf, size_t i) {
-    wchar_t cp = inbuf[i];
+static int read_utf16(utf32_t *cpp, size_t insz, const utf16_t* inbuf, size_t i) {
+    utf32_t cp = inbuf[i];
     if (!is_surrogate(cp)) {
         (*cpp) = cp;
         return 1;
     } else {
-        wchar_t cp2 = inbuf[i+1];
+        utf32_t cp2 = inbuf[i+1];
         if (is_high_surrogate(cp) && is_low_surrogate(cp2)) {
             (*cpp) = surrogate_pair(cp, cp2);
             return 2;
@@ -388,7 +344,7 @@ static int read_utf16(wchar_t *cpp, size_t insz, const utf16_t* inbuf, size_t i)
     }
 }
 
-static int write_utf16(wchar_t cp, size_t outsz, utf16_t* outbuf, size_t j) {
+static int write_utf16(utf32_t cp, size_t outsz, utf16_t* outbuf, size_t j) {
     if (cp <= 0xFFFF) {
         outbuf[j] = cp;
         return 1;
@@ -402,11 +358,11 @@ static int write_utf16(wchar_t cp, size_t outsz, utf16_t* outbuf, size_t j) {
     }
 }
 
-extern size_t C_Conv_utf8_to_16(size_t insz, const char* inbuf, size_t outsz, utf16_t* outbuf) {
+extern size_t C_Conv_utf8_to_16(size_t insz, const utf8_t* inbuf, size_t outsz, utf16_t* outbuf) {
     int i = 0;
     int j = 0;
     while (i < insz && j < outsz) {
-        wchar_t cp = 0;
+        utf32_t cp = 0;
         int inci, incj;
 
         inci = read_utf8(&cp, insz, inbuf, i);
@@ -424,11 +380,11 @@ extern size_t C_Conv_utf8_to_16(size_t insz, const char* inbuf, size_t outsz, ut
     return j;
 }
 
-extern size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz, char* outbuf) {
+extern size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz, utf8_t* outbuf) {
     int i = 0;
     int j = 0;
     while (i < insz && j < outsz) {
-        wchar_t cp;
+        utf32_t cp;
         int inci, incj;
 
         inci = read_utf16(&cp, insz, inbuf, i);
@@ -446,7 +402,7 @@ extern size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz,
     return j;
 }
 
-extern size_t C_Conv_utf32_to_16(size_t insz, const wchar_t* inbuf, size_t outsz, utf16_t* outbuf) {
+extern size_t C_Conv_utf32_to_16(size_t insz, const utf32_t* inbuf, size_t outsz, utf16_t* outbuf) {
     int j = 0;
     for (int i = 0; i < insz && j < outsz; i++) {
         int incj = write_utf16(inbuf[i], outsz, outbuf, j);
@@ -459,11 +415,11 @@ extern size_t C_Conv_utf32_to_16(size_t insz, const wchar_t* inbuf, size_t outsz
     return j;
 }
 
-extern size_t C_Conv_utf16_to_32(size_t insz, const utf16_t* inbuf, size_t outsz, wchar_t* outbuf) {
+extern size_t C_Conv_utf16_to_32(size_t insz, const utf16_t* inbuf, size_t outsz, utf32_t* outbuf) {
     int i = 0;
     int j = 0;
     for (j = 0; i < insz && j < outsz; j++) {
-        wchar_t cp;
+        utf32_t cp;
         int inci = read_utf16(&cp, insz, inbuf, i);
 
         if (inci <= 0) {
@@ -476,7 +432,7 @@ extern size_t C_Conv_utf16_to_32(size_t insz, const utf16_t* inbuf, size_t outsz
     return j;
 }
 
-extern size_t C_Conv_utf32_to_8(size_t insz, const wchar_t* inbuf, size_t outsz, char* outbuf) {
+extern size_t C_Conv_utf32_to_8(size_t insz, const utf32_t* inbuf, size_t outsz, utf8_t* outbuf) {
     size_t i;
     size_t j = 0;
     for (i = 0; i < insz && j < outsz; i++) {
@@ -492,11 +448,11 @@ extern size_t C_Conv_utf32_to_8(size_t insz, const wchar_t* inbuf, size_t outsz,
 
 /* ----------------------- GENERAL CONVERSION ----------------------------*/
 
-extern ssize_t C_Conv_transcode(const char* incode, const char* outcode, size_t insz, char* inbuf, size_t outsz, char* outbuf, size_t* nreadp) {
+extern ssize_t C_Conv_transcode(const char* incode, const char* outcode, size_t insz, octet_t* inbuf, size_t outsz, octet_t* outbuf, ssize_t* nreadp) {
     iconv_t cd;
     char tocode[101];
-    char* inbufp = inbuf;
-    char* outbufp = outbuf;
+    octet_t* inbufp = inbuf;
+    octet_t* outbufp = outbuf;
     size_t inszp = insz;
     size_t outszp = outsz;
 
@@ -513,7 +469,7 @@ extern ssize_t C_Conv_transcode(const char* incode, const char* outcode, size_t 
         return -1;
     }
 
-    iconv(cd, &inbufp, &inszp, &outbufp, &outszp);
+    iconv(cd, (char**)&inbufp, &inszp, (char**)&outbufp, &outszp);
 
     iconv_close(cd);
 

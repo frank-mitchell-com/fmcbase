@@ -43,27 +43,21 @@ static const char* EXPECT[] = {
     "lima",
     "mike",
     "november",
-    "... and so on ...",
-    "white",
+    "oscar",
+    "papa",
+    "quebec",
+    "romeo",
+    "sierra",
+    "tango",
+    "uniform",
+    "victor",
+    "whiskey",
     "x-ray",
     "yankee",
     "zebra"
 };
 
 const int EXPECTSZ = sizeof(EXPECT)/sizeof(const char*);
-
-/*
-static void print_refset(C_Ref_Set* rs) {
-    fprintf(stderr, "<n=%ld, s=%ld, a={ ", rs->nentries, rs->arraylen);
-    for (int i = 0; i < rs->arraylen; i++) {
-        const void* p = rs->array[i];
-        if (p != NULL) {
-            fprintf(stderr, "[%d]=%p \"%s\", ", i, p, (const char*)p);
-        }
-    }
-    fprintf(stderr, "}>\n");
-}
-*/
 
 static void setup() {
     t = NULL;

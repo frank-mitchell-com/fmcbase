@@ -1,7 +1,7 @@
 # Makefile for Frank Mitchell's C library
 
-#CC=gcc
-CC=clang
+CC=gcc
+#CC=clang
 
 LIBNAME=ctable
 

@@ -90,7 +90,7 @@ void C_Symbol_release(C_Symbol* *symptr);
  * in `*lvalptr` with `value`.  This will adjust reference counts accordingly.
  * Returns `value` for convenience.
  */
-C_Symbol* C_Symbol_set(C_Symbol* *lvalptr, C_Symbol* value);
+void C_Symbol_set(C_Symbol* *lvalptr, C_Symbol* value);
 
 /**
  * The value of the string used to create the symbol.

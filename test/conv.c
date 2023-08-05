@@ -119,6 +119,26 @@ static const wchar_t* cstr2wcs(const char* s) {
     return (wchar_t*)stralloc(buf, len, sizeof(wchar_t));
 }
 
+static const utf8_t* wcs2utf8(const wchar_t* s) {
+    size_t bsz;
+    utf8_t buf[STRBUFSIZ];
+
+    bzero(buf, sizeof(buf));
+    bsz = C_Conv_utf32_to_8(wcslen(s), s, STRBUFSIZ, buf);
+
+    return (utf8_t*)stralloc(buf, bsz, sizeof(utf8_t));
+}
+
+static const utf16_t* wcs2utf16(const wchar_t* s) {
+    size_t bsz;
+    utf16_t buf[STRBUFSIZ/2];
+
+    bzero(buf, sizeof(buf));
+    bsz = C_Conv_utf32_to_16(wcslen(s), s, STRBUFSIZ, buf);
+
+    return (utf16_t*)stralloc(buf, bsz, sizeof(utf16_t));
+}
+
 static int free_strings() {
     int count = 0;
     list_t* head = _strhead;
@@ -161,7 +181,7 @@ static void conv_smoke() {
     char* inbuf = "a very simple problem";
     size_t insz = strlen(inbuf) + 1;
     const wchar_t* expect = L"\ufeffa very simple problem";
-    size_t nread = 0;
+    ssize_t nread = 0;
     ssize_t nwrit = 0;
     int errcode;
     size_t outsz = STRBUFSIZ;
@@ -340,21 +360,140 @@ static void conv_utf16_to_32() {
     free_strings();
 }
 
-static void conv_charset_type() {
-    lequal(CHARSET_ASCII, C_Conv_charset_type("ascii"));
-    lequal(CHARSET_ASCII, C_Conv_charset_type("us-ascii"));
-    lequal(CHARSET_UTF_8, C_Conv_charset_type("utf8"));
-    lequal(CHARSET_UTF_32, C_Conv_charset_type("utf32"));
-    lequal(CHARSET_UTF_16, C_Conv_charset_type("ucs-2"));
-    lequal(CHARSET_LATIN_1, C_Conv_charset_type("latin1"));
-}
-
-/**
+/*
  * TODO: More error conditions and bad output.
  * - run out of output buffer
  * - malformed UTF-8 input (e.g. too many or not enough continuation bytes)
  * - malformed UTF-16 input (e.g. single surrogate pairs)
  */
+
+static void conv_is_ascii() {
+    const char *test1 = "This is ASCII";
+    const char *test2 = "This (\xC2\xA3) is not ASCII";
+
+    lequal(true, C_Conv_is_ascii(strlen(test1), test1));
+    lequal(false, C_Conv_is_ascii(strlen(test2), test2));
+}
+
+static wchar_t PLANE_1_STRING[] = { 
+    'P', 'l', 'a', 'n', 'e', ' ', '1', ':', ' ', 0x10348, '!', 0x0
+};
+
+static void conv_length_8_to_32() {
+    const wchar_t* expect[] = {
+        PLANE_1_STRING,
+        L"This has Unicode: \u0024\u20AC ...",
+        L"This does not."
+    };
+    const int expectsz = sizeof(expect) / sizeof (const wchar_t*);
+
+    for (int i = 0; i < expectsz; i++) {
+        const utf8_t*  istr = wcs2utf8(expect[i]);
+        int            ilen = strlen(istr);
+        const wchar_t* estr = expect[i];
+        int            elen = wcslen(estr);
+        size_t csz;
+
+        lequal((int)elen, (int)C_Conv_utf8_to_32_length(ilen, istr, &csz));
+        lequal((int)ilen, (int)csz);
+    }
+
+    free_strings();
+}
+
+static void conv_length_8_to_16() {
+    const wchar_t* expect[] = {
+        PLANE_1_STRING,
+        L"This has Unicode: \u0024\u20AC ...",
+        L"This does not."
+    };
+    const int expectsz = sizeof(expect) / sizeof (const wchar_t*);
+
+    for (int i = 0; i < expectsz; i++) {
+        const utf8_t*  istr = wcs2utf8(expect[i]);
+        int            ilen = strlen(istr);
+        const utf16_t* estr = wcs2utf16(expect[i]);
+        int            elen = jcslen(estr);
+        size_t csz;
+
+        lequal((int)elen, (int)C_Conv_utf8_to_16_length(ilen, istr, &csz));
+        lequal((int)ilen, (int)csz);
+    }
+
+    free_strings();
+}
+
+static void conv_length_16_to_8() {
+    const wchar_t* expect[] = {
+        PLANE_1_STRING,
+        L"This has Unicode: \u0024\u20AC ...",  // 24 wchar_t
+        L"This does not."                       // 14 wchar_t
+    };
+    const int expectsz = sizeof(expect) / sizeof (const wchar_t*);
+
+    for (int i = 0; i < expectsz; i++) {
+        const utf16_t* istr = wcs2utf16(expect[i]);
+        int            ilen = jcslen(istr);
+        const utf8_t*  estr = wcs2utf8(expect[i]);
+        int            elen = strlen(estr);
+        size_t csz;
+
+        lequal((int)elen, (int)C_Conv_utf16_to_8_length(ilen, istr, &csz));
+        lequal((int)ilen, (int)csz);
+    }
+
+    free_strings();
+}
+
+static void conv_length_32_to_8() {
+    const wchar_t* input[] = {
+        PLANE_1_STRING,
+        L"This has Unicode: \u0024\u20AC ...",   // 24 wchar_t
+        L"This does not."                        // 14 wchar_t
+    };
+    const int inputsz = sizeof(input) / sizeof (const wchar_t*);
+
+    for (int i = 0; i < inputsz; i++) {
+        const wchar_t* istr = input[i];
+        int            ilen = wcslen(istr);
+        const utf8_t*  estr = wcs2utf8(input[i]);
+        int            elen = strlen(estr);
+        size_t csz;
+
+        lequal((int)elen, (int)C_Conv_utf32_to_8_length(ilen, istr, &csz));
+        lequal((int)ilen, (int)csz);
+    }
+
+    free_strings();
+}
+
+static void conv_min_bytes() {
+    struct min_bytes_pair {
+        int     expect;
+        wchar_t *data;
+    } test[] = {
+        { 4, PLANE_1_STRING },
+        { 2, L"Unicode: \u0024\u20AC ..." },
+        { 2, L"Unicode trap: \u0100 ..." },
+        { 1, L"Latin 1: tschüß! \u00FF" },
+        { 1, L"ASCII: blah blahbidy blah" },
+        { 0, L"" }
+    };
+    const int testsz = sizeof(test) / sizeof (struct min_bytes_pair);
+
+    for (int i = 1; i < testsz; i++) {
+        const wchar_t* t32 = test[i].data;
+        const utf16_t* t16 = wcs2utf16(t32);
+        const utf8_t*  t8  = wcs2utf8(t32);
+
+        lequal(test[i].expect, C_Conv_min_bytes(wcslen(t32), t32));
+        lequal(test[i].expect, C_Conv_min_bytes_utf16(jcslen(t16), t16));
+        lequal(test[i].expect, C_Conv_min_bytes_utf8(strlen(t8), t8));
+    }
+
+    free_strings();
+}
+
 
 int main (int argc, char* argv[]) {
     lrun("cconv_transcode_smoke", conv_smoke);
@@ -364,7 +503,12 @@ int main (int argc, char* argv[]) {
     lrun("cconv_utf16_to_8", conv_utf16_to_8);
     lrun("cconv_utf32_to_16", conv_utf32_to_16);
     lrun("cconv_utf16_to_32", conv_utf16_to_32);
-    lrun("cconv_charset_type", conv_charset_type);
+    lrun("cconv_is_ascii", conv_is_ascii);
+    lrun("cconv_length_8_to_32", conv_length_8_to_32);
+    lrun("cconv_length_8_to_16", conv_length_8_to_16);
+    lrun("cconv_length_16_to_8", conv_length_16_to_8);
+    lrun("cconv_length_32_to_8", conv_length_32_to_8);
+    lrun("cconv_min_bytes", conv_min_bytes);
     lrun("test_code_smoke", string_smoke);
     lresults();
     return lfails != 0;

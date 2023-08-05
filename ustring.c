@@ -43,7 +43,7 @@ static void* default_alloc(void* unused, void* p, size_t nmem, size_t sz) {
     return NULL;
 }
 
-RWLOCK_DECL(_alloc_lock);
+static RWLOCK_DECL(_alloc_lock);
 static volatile u_string_alloc _alloc_func = default_alloc;
 static volatile void*          _alloc_data = NULL;
 
@@ -76,7 +76,7 @@ static void* ustr_free(void* p) {
 static bool make_utf32_string(C_Symbol* enc, size_t insz, const octet_t* inbuf, size_t *outszp, wchar_t* *outbufp) {
     const char* encname 
         = (const char*)C_Symbol_as_utf8_string(enc, NULL);
-    size_t read, written, offset;
+    ssize_t read, written, offset;
     size_t ulen;
     wchar_t *ubuf;
     size_t bufsz = insz+2;
@@ -84,11 +84,10 @@ static bool make_utf32_string(C_Symbol* enc, size_t insz, const octet_t* inbuf, 
 
     written = C_Conv_transcode(encname, "UTF-32", 
                                     insz, 
-                                    (char *)inbuf, 
+                                    (octet_t*)inbuf, 
                                     bufsz * sizeof(wchar_t), 
-                                    (char *)buffer, 
+                                    (octet_t*)buffer, 
                                     &read);
-    // TODO: Check if read == insz
     if (read != insz) goto error;
     
     ulen = written/sizeof(wchar_t);
@@ -169,7 +168,8 @@ USTR_API bool U_String_new_ascii(U_String* *sp, size_t sz, const char* buf) {
 }
 
 USTR_API bool U_String_new_utf8(U_String* *sp, size_t sz, const utf8_t* buf) {
-    return U_String_new_ascii(sp, sz, (const char*)buf);
+    C_Symbol* enc = lookup_symbol("UTF-8");
+    return make_string(sp, enc, sz, sizeof(utf8_t), buf);
 }
 
 USTR_API bool U_String_new_utf16(U_String* *sp, size_t sz, const utf16_t* buf) {
@@ -205,7 +205,7 @@ USTR_API size_t U_String_length(U_String* s) {
 
 USTR_API size_t U_String_to_utf8(U_String* s, size_t offset, size_t max, utf8_t* buf) {
     // Need to write the final null byte.
-    return C_Conv_utf32_to_8(s->wcs_len+1, s->wcs_arr, max, (char*)buf+offset);
+    return C_Conv_utf32_to_8(s->wcs_len+1, s->wcs_arr, max, buf+offset);
 }
 
 USTR_API size_t U_String_to_utf32(U_String* s, size_t offset, size_t max, wchar_t* buf) {
@@ -264,7 +264,7 @@ USTR_API bool U_String_release(U_String* *sp) {
     return result;
 }
 
-USTR_API U_String* U_String_set(U_String* *lvalue, U_String* rvalue) {
-    return (U_String*)C_Any_set((const void**)lvalue, (const void*)rvalue);
+USTR_API void U_String_set(U_String* *lvalue, U_String* rvalue) {
+    C_Any_set((const void**)lvalue, (const void*)rvalue);
 }
 

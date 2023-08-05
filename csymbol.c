@@ -248,14 +248,13 @@ extern void C_Symbol_release(C_Symbol* *symptr) {
     (*symptr) = NULL;
 }
 
-extern C_Symbol* C_Symbol_set(C_Symbol* *lvalptr, C_Symbol* val) {
+extern void C_Symbol_set(C_Symbol* *lvalptr, C_Symbol* val) {
     if (lvalptr) {
         C_Symbol* oldval = (*lvalptr);
 
         (*lvalptr) = C_Symbol_retain(val);
         C_Symbol_release(&oldval);
     }
-    return val;
 }
 
 extern const uint8_t* C_Symbol_as_utf8_string(C_Symbol* sym, size_t *lenptr) {

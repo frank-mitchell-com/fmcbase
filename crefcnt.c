@@ -26,15 +26,17 @@
 #include "cthread.h"
 #include "ctable.h"
 #include "crefset.h"
+#include "creftbl.h"
 #include "crefcnt.h"
 
 /* -------------------------- PRIVATE FUNCTIONS -------------------------- */
 
 static LOCK_DECL(_table_lock);
 
-static C_Table*   _reftable = NULL;
-static C_Ref_Set* _reflist  = NULL;
-static C_Ref_Set* _zeroset  = NULL;
+static C_Table*     _reftable = NULL;
+static C_Ref_Set*   _reflist  = NULL;
+static C_Ref_Set*   _zeroset  = NULL;
+static C_Ref_Table* _onzero   = NULL;
 
 typedef struct C_Ref_Record {
     LOCK_TYPE(lock);
@@ -46,23 +48,30 @@ typedef struct C_Ref_Record {
 
 static C_Table* reftable() {
     if (!_reftable) {
-        C_Table_new(&_reftable, 10);
+        C_Table_new(&_reftable, 11);
     }
     return _reftable;
 }
 
 static C_Ref_Set* reflist() {
     if (!_reflist) {
-        C_Ref_Set_new(&_reflist, 10);
+        C_Ref_Set_new(&_reflist, 11);
     }
     return _reflist;
 }
 
 static C_Ref_Set* zeroset() {
     if (!_zeroset) {
-        C_Ref_Set_new(&_zeroset, 10);
+        C_Ref_Set_new(&_zeroset, 11);
     }
     return _zeroset;
+}
+
+static C_Ref_Table* onzerotbl() {
+    if (!_onzero) {
+        C_Ref_Table_new(&_onzero, 11);
+    }
+    return _onzero;
 }
 
 static C_Ref_Record* record(const void* obj) {
@@ -146,6 +155,7 @@ extern uint32_t C_Ref_Count_refcount(const void* obj) {
 extern uint32_t C_Ref_Count_decrement(const void* obj) {
     uint32_t result;
     C_Ref_Record* rec = NULL;
+    C_On_Zero_Fcn onzero = NULL;
 
     LOCK_ACQUIRE(_table_lock);
 
@@ -154,9 +164,16 @@ extern uint32_t C_Ref_Count_decrement(const void* obj) {
         // Reference count is 1 or less; add to "zero set"
         C_Ref_Set_add(zeroset(), obj);
         result = 0;
+
+        onzero = (C_On_Zero_Fcn)C_Ref_Table_get(onzerotbl(), obj);
     }
 
     LOCK_RELEASE(_table_lock);
+
+    if (onzero) {
+        C_Ref_Count_delist(obj);
+        onzero((void *)obj);
+    }
 
     if (rec != NULL) {
         LOCK_ACQUIRE(rec->lock);
@@ -253,6 +270,7 @@ extern void C_Ref_Count_delist(const void* obj) {
 
     C_Ref_Set_remove(reflist(), obj);
     C_Ref_Set_remove(zeroset(), obj);
+    C_Ref_Table_remove(onzerotbl(), obj, NULL);
 
     rec = record(obj);
 
@@ -273,7 +291,10 @@ extern void C_Ref_Count_delist(const void* obj) {
     }
 }
 
-extern void C_Ref_Count_on_zero(const void* p, void (*onzero)(void*)) {
+extern void C_Ref_Count_on_zero(const void* p, C_On_Zero_Fcn onzero) {
+    LOCK_ACQUIRE(_table_lock);
+    C_Ref_Table_put(onzerotbl(), p, onzero, NULL);
+    LOCK_RELEASE(_table_lock);
 }
 
 /* ---------------------------- HELPER FUNCTIONS ---------------------------- */
@@ -296,15 +317,14 @@ bool C_Any_release(const void* *pptr) {
     return true;
 }
 
-const void* C_Any_set(const void* *lvalue, const void* value) {
+void C_Any_set(const void* *lvalue, const void* value) {
     const void* oldvalue;
     if (!lvalue) {
-        return NULL;
+        return;
     }
     oldvalue = *lvalue;
     *lvalue = value;
     C_Any_retain(value);
     C_Any_release(&oldvalue);
-    return value;
 }
 

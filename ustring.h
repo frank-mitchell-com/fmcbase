@@ -211,7 +211,7 @@ USTR_API bool U_String_release(U_String* *s);
 /**
  *
  */
-USTR_API U_String* U_String_set(U_String* *lvalue, U_String* rvalue);
+USTR_API void U_String_set(U_String* *lvalue, U_String* rvalue);
 
 #endif // USTRING_H_INCLUDED
 

@@ -3,24 +3,24 @@
 ## PENDING FINAL DESIGN
 
 - common header
-- string table (read write lock)
 - `C_Port`
+- `U_Alloc`
+  - customizable allocator in `U_String`
 
 ## PENDING IMPLEMENTATION
 
 - `C_Conv`
-   - Invalid encoding detection & signalling
-   - Find *n*th code point in a UTF-8 string.
-   - Find *n*th code point after *k*th byte in a UTF-8 string.
+  - Invalid encoding detection & signalling
+  - Check endianness for UTF-16 and UTF-32
+  - Classify UTF-32 as ASCII, LATIN-1, UTF-16{,BE,LE}, UTF-32{,BE,LE}.
 
 - `C_Table`
    - collision metrics
 
-- `C_Ref_Count`
-  - "on zero" callback
-
 - `U_String`
    - nearly all functions
+   - "compressed" strings of 1-byte and 2-byte characters.
+   - "small" strings of 0 or 1 character (`wchar_t`)
 
 - `U_Char_Buffer`
    - all functions
@@ -32,11 +32,10 @@
 
 ## PENDING TESTING
 
-- `C_Conv`
-  - Check endianness of UTF-16 and UTF-32
+### Functionality
 
-- `C_Ref_Count` / `C_Any`
-  - retain, release, set methods
+- `C_Conv`
+  - Test API to categorize and canonicalize charset names
 
 - `C_Table`
    - custom hash function
@@ -48,12 +47,17 @@
    - conversion to codepoints
    - reference counting (`C_Ref_Count`)
 
+### Robustness
+
 - Proper mutex usage (no deadlocks or corrupted data)
   - Update `C_Ref_Count` simultaneously in multiple threads.
   - Create multiple `C_Symbol`s in multiple threads.
+  - Allocate `U_String`s in multiple threads.
   - Get the same non-UTF `U_String`'s UTF data in multiple threads.
   - Thread safety of `U_Char_Buffer`?
   - Thread safety of `U_String_Array`?
+
+### Performance
 
 - Memory and CPU Performance
   - Add 10000 (or more) elements to a `C_Table` and see if it slows or breaks.
