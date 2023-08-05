@@ -49,36 +49,32 @@ static void table_smoke() {
     teardown();
 }
 
-static void table_put() {
+static void table_add() {
     const void* value;
-    const void* oldvalue = "splunge";
 
     setup();
 
     // Check key not in table
-    lequal(C_String_Table_has(t, "key"), false);
+    lequal(C_String_Table_has(t, 3, "key"), false);
     lequal(0, (int)C_String_Table_size(t));
 
     // PUT key = value
-    lok(C_String_Table_put(t, "key", "value", &oldvalue));
-    lok(oldvalue == NULL);
+    lok(C_String_Table_add(t, 3, "key", "value"));
 
     // Check key = value
-    lsequal("value", (const char *)C_String_Table_get(t, "key"));
-    lequal(1, (int)C_String_Table_size(t));
+    lsequal("value", (const char *)C_String_Table_get(t, 3, "key"));
 
-    // PUT key = value2
-    lok(C_String_Table_put(t, "key", "value2", &oldvalue));
-    lsequal("value", (const char*)oldvalue);
+    // Attempt to add key = value2
+    lequal(false, C_String_Table_add(t, 3, "key", "value2"));
 
     // Check key = value2
-    lsequal("value2", (const char*)C_String_Table_get(t, "key"));
+    lsequal("value", (const char*)C_String_Table_get(t, 3, "key"));
     lequal(1, (int)C_String_Table_size(t));
 
     teardown();
 }
 
-static void table_put_multiple() {
+static void table_add_multiple() {
     kvpair expected[] = {
         { "alpha",   "alpha" },
         { "bravo",   "bravo" },
@@ -103,10 +99,10 @@ static void table_put_multiple() {
         const char* value = expected[i].value;
 
         // ADD key = value
-        lok(C_String_Table_put(t, key, value, NULL));
+        lok(C_String_Table_add(t, strlen(key), key, value));
 
         // Check key = value in table
-        lsequal(value, (const char*)C_String_Table_get(t, key));
+        lsequal(value, (const char*)C_String_Table_get(t, strlen(key), key));
     }
 
     lequal(13, (int)C_String_Table_size(t));
@@ -116,7 +112,7 @@ static void table_put_multiple() {
         const char* value = expected[i].value;
 
         // Check key = value in table AGAIN
-        lsequal(value, (const char*)C_String_Table_get(t, key));
+        lsequal(value, (const char*)C_String_Table_get(t, strlen(key), key));
     }
 
     teardown();
@@ -127,15 +123,15 @@ static void table_remove() {
 
     setup();
 
-    lok(C_String_Table_put(t, "key", "value", NULL));
+    lok(C_String_Table_add(t, 3, "key", "value"));
 
-    lequal(C_String_Table_has(t, "key"), true);
+    lequal(C_String_Table_has(t, 3, "key"), true);
     lequal(1, (int)C_String_Table_size(t));
 
-    lok(C_String_Table_remove(t, "key", &oldvalue));
+    lok(C_String_Table_remove(t, 3, "key", &oldvalue));
     lsequal("value", (const char*)oldvalue);
 
-    lequal(C_String_Table_has(t, "key"), false);
+    lequal(C_String_Table_has(t, 3, "key"), false);
     lequal(0, (int)C_String_Table_size(t));
 
     teardown();
@@ -143,8 +139,8 @@ static void table_remove() {
 
 int main (int argc, char* argv[]) {
     lrun("table_smoke", table_smoke);
-    lrun("table_put", table_put);
-    lrun("table_put_multiple", table_put_multiple);
+    lrun("table_add", table_add);
+    lrun("table_add_multiple", table_add_multiple);
     lrun("table_remove", table_remove);
     lresults();
     return lfails != 0;

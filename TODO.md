@@ -12,15 +12,18 @@
 - `C_Conv`
   - Invalid encoding detection & signalling
   - Check endianness for UTF-16 and UTF-32
-  - Classify UTF-32 as ASCII, LATIN-1, UTF-16{,BE,LE}, UTF-32{,BE,LE}.
 
 - `C_Table`
    - collision metrics
+
+- `C_Symbol`
+   - use onzero callback to delete (or not)
 
 - `U_String`
    - nearly all functions
    - "compressed" strings of 1-byte and 2-byte characters.
    - "small" strings of 0 or 1 character (`wchar_t`)
+   - use onzero callback to delete
 
 - `U_Char_Buffer`
    - all functions
@@ -34,9 +37,6 @@
 
 ### Functionality
 
-- `C_Conv`
-  - Test API to categorize and canonicalize charset names
-
 - `C_Table`
    - custom hash function
    - custom equal, copy, delete
@@ -45,7 +45,6 @@
 - `U_String`
    - all functions
    - conversion to codepoints
-   - reference counting (`C_Ref_Count`)
 
 ### Robustness
 

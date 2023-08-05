@@ -33,7 +33,7 @@
 
 static LOCK_DECL(_table_lock);
 
-static C_Table*     _reftable = NULL;
+static C_Ref_Table* _reftable = NULL;
 static C_Ref_Set*   _reflist  = NULL;
 static C_Ref_Set*   _zeroset  = NULL;
 static C_Ref_Table* _onzero   = NULL;
@@ -46,9 +46,9 @@ typedef struct C_Ref_Record {
 } C_Ref_Record;
 
 
-static C_Table* reftable() {
+static C_Ref_Table* reftable() {
     if (!_reftable) {
-        C_Table_new(&_reftable, 11);
+        C_Ref_Table_new(&_reftable, 11);
     }
     return _reftable;
 }
@@ -75,14 +75,7 @@ static C_Ref_Table* onzerotbl() {
 }
 
 static C_Ref_Record* record(const void* obj) {
-    C_Userdata key, value;
-
-    C_Userdata_set_pointer(&key, obj);
-    C_Userdata_clear(&value, false);
-
-    C_Table_get((reftable()), &key, &value);
-
-    return (C_Ref_Record*)value.ptr;
+    return (C_Ref_Record*)C_Ref_Table_get(reftable(), obj);
 }
 
 static C_Ref_Record* add_record(const void* obj) {
@@ -102,10 +95,7 @@ static C_Ref_Record* add_record(const void* obj) {
     rec->refcnt = 1;
     rec->freed  = false;
 
-    C_Userdata key, value;
-    C_Userdata_set_pointer(&key, obj);
-    C_Userdata_set_pointer(&value, rec);
-    if (!C_Table_add(reftable(), &key, &value)) {
+    if (!C_Ref_Table_put(reftable(), obj, rec, NULL)) {
         LOCK_FREE(rec->lock);
         free(rec);
         rec = NULL;
@@ -115,9 +105,7 @@ static C_Ref_Record* add_record(const void* obj) {
 
 static void remove_record(C_Ref_Record* rec) {
     if (rec) {
-        C_Userdata key;
-        C_Userdata_set_pointer(&key, rec->key);
-        C_Table_remove(reftable(), &key);
+        C_Ref_Table_remove(reftable(), rec->key, NULL);
     }
 }
 

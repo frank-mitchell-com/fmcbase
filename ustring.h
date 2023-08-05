@@ -28,8 +28,6 @@
 #include <stdint.h>  /* defines uint8_t, utf16_t, uintptr_t */
 #include <wchar.h>   /* wchar_t */
 
-#include "csymbol.h"
-
 #define USTR_API    extern
 
 typedef uint8_t  octet_t;
@@ -111,7 +109,7 @@ USTR_API bool U_String_new_utf32(U_String* *sp, size_t sz, const wchar_t* buf);
  * Returns false if the system runs out of memory or the string cannot 
  * be created for other reasons.
  */
-USTR_API bool U_String_new_encoded(U_String* *sp, C_Symbol* encoding, size_t sz, const octet_t* buf);
+USTR_API bool U_String_new_encoded(U_String* *sp, const char* charset, size_t sz, const octet_t* buf);
 
 /**
  * Create a string at `sp` from a null-terminated string `cstr`.
@@ -122,16 +120,6 @@ USTR_API bool U_String_new_from_cstring(U_String* *sp, const char* cstr);
  *
  */
 USTR_API wchar_t U_String_char_at(U_String* s, size_t i);
-
-/**
- *
- */
-USTR_API C_Symbol* U_String_encoding(U_String* s);
-
-/**
- *
- */
-USTR_API const char* U_String_encoding_name(U_String* s);
 
 /**
  *

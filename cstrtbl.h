@@ -30,12 +30,6 @@
 #include <stdint.h>   /* defines {,u}intN_t */
 
 /**
- * A type for a null-terminated C-style string in ASCII or UTF-8.
- * Embedded nulls must be encoded as two-byte UTF-8 characters.
- */
-typedef const char* cstring_t;
-
-/**
  * An opaque type for a mapping from C strings to void pointers.
  * The table makes copies of all string keys, and deletes them when done.
  * The client program must free all non-constant strings used to set
@@ -62,30 +56,29 @@ size_t C_String_Table_size(C_String_Table* t);
  * Return the pointer value for `key`, or NULL if none found.
  * If `key` is null, this always returns NULL, since a key cannot be null.
  */
-const void* C_String_Table_get(C_String_Table* t, cstring_t key);
+const void* C_String_Table_get(C_String_Table* t, size_t keylen, const uint8_t* key);
 
 /**
  * Whether `t` contains an entry for `key`.
  * If `key` is null, this always returns false, since a key cannot be null.
  * Returns false if the key was not found.
  */
-bool C_String_Table_has(C_String_Table* t, cstring_t key);
+bool C_String_Table_has(C_String_Table* t, size_t keylen, const uint8_t* key);
 
 /**
- * Put `value` into an entry for `key`.
- * If `key` is null, this function fails, since a key cannot be null.
- * If `value` is null, any existing entry will be removed.
- * The previous value if any is placed in `*oldvalp` if given.
- * Returns false only if the operation could not be completed for some reason.
+ * Add `value` as an entry for `key`, if none exists.
+ * If `key` or `value` is null, this function fails and returns false.
+ * If `key` already exists in the table, this fucntion fails and returns false.
+ * Returns false only if the operation could not be completed.
  */
-bool C_String_Table_put(C_String_Table* t, cstring_t key, const void* value, const void* *oldvalp);
+bool C_String_Table_add(C_String_Table* t, size_t keylen, const uint8_t* key, const void* value);
 
 /**
  * Remove the entry for `key`.
  * The previous value if any is placed in `*oldvalp` if given.
  * Returns false if the operation could not be completed for some reason.
  */
-bool C_String_Table_remove(C_String_Table* t, cstring_t key, const void* *oldvalp);
+bool C_String_Table_remove(C_String_Table* t, size_t keylen, const uint8_t* key, const void* *oldvalp);
 
 /**
  * Deletes the table and all memory it allocated.

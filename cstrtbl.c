@@ -55,10 +55,10 @@ extern size_t C_String_Table_size(C_String_Table* t) {
     return C_Table_size(t->t);
 }
 
-extern const void* C_String_Table_get(C_String_Table* t, cstring_t k) {
+extern const void* C_String_Table_get(C_String_Table* t, size_t kl, const uint8_t* kp) {
     C_Userdata key, value;
 
-    C_Userdata_set_string(&key, k);
+    C_Userdata_set_value(&key, kp, kl);
     C_Userdata_clear(&value, false);
 
     C_Table_get(t->t, &key, &value);
@@ -66,32 +66,26 @@ extern const void* C_String_Table_get(C_String_Table* t, cstring_t k) {
     return value.ptr;
 }
 
-extern bool C_String_Table_has(C_String_Table* t, cstring_t k) {
+extern bool C_String_Table_has(C_String_Table* t, size_t kl, const uint8_t* kp) {
     C_Userdata key;
 
-    C_Userdata_set_string(&key, k);
+    C_Userdata_set_value(&key, kp, kl);
 
     return C_Table_has(t->t, &key);
 }
 
-extern bool C_String_Table_put(C_String_Table* t, cstring_t k, const void* v, const void* *oldvalp) {
+extern bool C_String_Table_add(C_String_Table* t, size_t kl, const uint8_t* kp, const void* v) {
     C_Userdata key, value;
 
-    C_Userdata_set_string(&key, k);
-
-    if (oldvalp) {
-        C_Userdata_clear(&value, false);
-        C_Table_get(t->t, &key, &value);
-        *oldvalp = value.ptr;
-    }
+    C_Userdata_set_value(&key, kp, kl);
     C_Userdata_set_pointer(&value, v);
-    return C_Table_put(t->t, &key, &value);
+    return C_Table_add(t->t, &key, &value);
 }
 
-extern bool C_String_Table_remove(C_String_Table* t, cstring_t k, const void* *oldvalp) {
+extern bool C_String_Table_remove(C_String_Table* t, size_t kl, const uint8_t* kp, const void* *oldvalp) {
     C_Userdata key, value;
 
-    C_Userdata_set_string(&key, k);
+    C_Userdata_set_value(&key, kp, kl);
 
     if (oldvalp) {
         C_Userdata_clear(&value, false);

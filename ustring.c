@@ -73,16 +73,14 @@ static void* ustr_free(void* p) {
     return result;
 }
 
-static bool make_utf32_string(C_Symbol* enc, size_t insz, const octet_t* inbuf, size_t *outszp, wchar_t* *outbufp) {
-    const char* encname 
-        = (const char*)C_Symbol_as_utf8_string(enc, NULL);
+static bool make_utf32_string(const char* charset, size_t insz, const octet_t* inbuf, size_t *outszp, wchar_t* *outbufp) {
     ssize_t read, written, offset;
     size_t ulen;
     wchar_t *ubuf;
     size_t bufsz = insz+2;
     wchar_t buffer[bufsz];
 
-    written = C_Conv_transcode(encname, "UTF-32", 
+    written = C_Conv_transcode(charset, "UTF-32", 
                                     insz, 
                                     (octet_t*)inbuf, 
                                     bufsz * sizeof(wchar_t), 
@@ -113,19 +111,19 @@ error:
     return false;
 }
 
-static bool make_string(U_String* *sp, C_Symbol* enc, size_t len, size_t csz, const void* buf) {
+static bool make_string(U_String* *sp, const char* charset, size_t len, size_t csz, const void* buf) {
     U_String* s = NULL;
     size_t   ul = 0;
     wchar_t* ub = NULL;
 
-    if (sp == NULL || enc == NULL || buf == NULL) return false;
+    if (sp == NULL || charset == NULL || buf == NULL) return false;
 
     *sp = NULL;
 
     s = (U_String *)ustr_alloc(1, sizeof(U_String));
     if (s == NULL) goto error;
 
-    if (!make_utf32_string(enc, len * csz, buf, &ul, &ub)) goto error;
+    if (!make_utf32_string(charset, len * csz, buf, &ul, &ub)) goto error;
 
     C_Ref_Count_list(s);
     s->wcs_len = ul;
@@ -151,39 +149,28 @@ USTR_API void U_String_set_allocator(u_string_alloc func, void *data) {
     RWLOCK_RELEASE(_alloc_lock);
 }
 
-static C_Symbol* lookup_symbol(const char* str) {
-    C_Symbol* result = NULL;
-    C_Symbol_for_utf8_string(&result, strlen(str), (const uint8_t*)str);
-    return result;
-}
-
 USTR_API bool U_String_new_ascii(U_String* *sp, size_t sz, const char* buf) {
-    C_Symbol* enc;
     if (C_Conv_is_ascii(sz, buf)) {
-        enc = lookup_symbol("US-ASCII");
+        return make_string(sp, "ASCII", sz, sizeof(octet_t), buf);
     } else {
-        enc = lookup_symbol("UTF-8");
+        return make_string(sp, "UTF-8", sz, sizeof(octet_t), buf);
     }
-    return make_string(sp, enc, sz, sizeof(octet_t), buf);
 }
 
 USTR_API bool U_String_new_utf8(U_String* *sp, size_t sz, const utf8_t* buf) {
-    C_Symbol* enc = lookup_symbol("UTF-8");
-    return make_string(sp, enc, sz, sizeof(utf8_t), buf);
+    return make_string(sp, "UTF-8", sz, sizeof(utf8_t), buf);
 }
 
 USTR_API bool U_String_new_utf16(U_String* *sp, size_t sz, const utf16_t* buf) {
-    C_Symbol* enc = lookup_symbol("UTF-16");
-    return make_string(sp, enc, sz, sizeof(utf16_t), buf);
+    return make_string(sp, "UTF-16", sz, sizeof(utf16_t), buf);
 }
 
 USTR_API bool U_String_new_utf32(U_String* *sp, size_t sz, const wchar_t* buf) {
-    C_Symbol* enc = lookup_symbol("UTF-32");
-    return make_string(sp, enc, sz, sizeof(wchar_t), buf);
+    return make_string(sp, "UTF-32", sz, sizeof(wchar_t), buf);
 }
 
-USTR_API bool U_String_new_encoded(U_String* *sp, C_Symbol* encoding, size_t sz, const octet_t* buf) {
-    return make_string(sp, encoding, sz, sizeof(octet_t), buf);
+USTR_API bool U_String_new_encoded(U_String* *sp, const char* charset, size_t sz, const octet_t* buf) {
+    return make_string(sp, charset, sz, sizeof(octet_t), buf);
 }
 
 USTR_API bool U_String_new_from_cstring(U_String* *sp, const char* cstr) {

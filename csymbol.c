@@ -23,9 +23,9 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "ctable.h"
 #include "crefcnt.h"
 #include "crefset.h"
+#include "cstrtbl.h"
 #include "cthread.h"
 
 #include "csymbol.h"
@@ -39,8 +39,8 @@
  * operations.
  */
 
-static C_Table*   _symbols_by_name = NULL;
-static C_Ref_Set* _symbol_ref_set  = NULL;
+static C_String_Table* _symbols_by_name = NULL;
+static C_Ref_Set*      _symbol_ref_set  = NULL;
 
 static LOCK_DECL(_lock);
 
@@ -51,9 +51,9 @@ struct C_Symbol {
     uint8_t *strbuf;
 };
 
-static C_Table* symbols_by_name() {
+static C_String_Table* symbols_by_name() {
     if (!_symbols_by_name) {
-        C_Table_new(&_symbols_by_name, 5);
+        C_String_Table_new(&_symbols_by_name, 5);
     }
     return _symbols_by_name;
 }
@@ -70,14 +70,12 @@ static C_Ref_Set* symbol_ref_set() {
  * ASSUMES the CALLER has the LOCK.
  */
 static void free_symbol(C_Symbol* sym) {
-    C_Userdata key;
     if (!sym) return;
 
     C_Ref_Set_remove(symbol_ref_set(), sym);
     if (sym->strbuf && symbols_by_name()) {
         // In case of nulls ...
-        C_Userdata_set_value(&key, sym->strbuf, sym->strlen);
-        C_Table_remove(symbols_by_name(), &key);
+        C_String_Table_remove(symbols_by_name(), sym->strlen, sym->strbuf, NULL);
     }
 
     if (sym->strbuf) {
@@ -91,8 +89,6 @@ static void free_symbol(C_Symbol* sym) {
  * ASSUMES the CALLER has the LOCK.
  */
 static C_Symbol* symbol_alloc_init(size_t len, const uint8_t* uptr) {
-    C_Userdata key, value;
-
     C_Symbol* result = (C_Symbol*)malloc(sizeof(C_Symbol));
     if (!result) {
         free_symbol(result);
@@ -116,10 +112,7 @@ static C_Symbol* symbol_alloc_init(size_t len, const uint8_t* uptr) {
         result->strlen = len;
         result->strbuf = buf;
 
-        C_Userdata_set_value(&key, buf, len);
-        C_Userdata_set_pointer(&value, result);
-
-        if (!C_Table_add(symbols_by_name(), &key, &value)) {
+        if (!C_String_Table_add(symbols_by_name(), len, buf, result)) {
             free_symbol(result);
             return NULL;
         }
@@ -137,18 +130,14 @@ static C_Symbol* symbol_alloc_init(size_t len, const uint8_t* uptr) {
  */
 static C_Symbol* find_symbol(size_t len, const uint8_t* uptr, bool* isnew) {
     C_Symbol* result;
-    C_Userdata key, value;
 
     if (!uptr) return NULL;
 
     if (!symbols_by_name()) return NULL;
 
-    C_Userdata_set_value(&key, uptr, len);
-    C_Userdata_clear(&value, false);
-    C_Table_get(symbols_by_name(), &key, &value);
+    result = (C_Symbol*)C_String_Table_get(symbols_by_name(), len, uptr);
 
-    if (value.ptr) {
-        result = value.ptr;
+    if (result != NULL) {
         (*isnew) = false;
     } else {
         result = symbol_alloc_init(len, uptr);

@@ -177,13 +177,10 @@ static void string_encoding() {
 
     for (int i = 0; i < EXPECTSZ; i++) {
         U_String* s = NULL;
-        C_Symbol* e = NULL;
+        const char* cs = EXPECT[i].encoding;
         int len = EXPECT[i].len;
 
-        C_Symbol_for_cstring(&e, EXPECT[i].encoding);
-        lok(e != NULL);
-
-        lok(U_String_new_encoded(&s, e, len, (const octet_t*)EXPECT[i].input));
+        lok(U_String_new_encoded(&s, cs, len, (const octet_t*)EXPECT[i].input));
         lok(s != NULL);
 
         if (s) {
@@ -202,13 +199,10 @@ static void string_encoding_utf8() {
 
     for (int i = 0; i < EXPECTSZ; i++) {
         U_String* s = NULL;
-        C_Symbol* e = NULL;
+        const char* cs = EXPECT[i].encoding;
         int len = EXPECT[i].len;
 
-        C_Symbol_for_cstring(&e, EXPECT[i].encoding);
-        lok(e != NULL);
-
-        lok(U_String_new_encoded(&s, e, len, (const octet_t*)EXPECT[i].input));
+        lok(U_String_new_encoded(&s, cs, len, (const octet_t*)EXPECT[i].input));
         lok(s != NULL);
 
         if (s) {
