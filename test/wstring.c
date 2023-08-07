@@ -26,8 +26,8 @@
 #include <strings.h>
 #include <wchar.h>
 #include "minctest.h"
-#include "cconv.h"
-#include "ustring.h"
+#include "convert.h"
+#include "wstring.h"
 
 #define STRBUFSIZ   64
 

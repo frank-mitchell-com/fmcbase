@@ -20,8 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef CREFSET_H_INCLUDED
-#define CREFSET_H_INCLUDED
+#ifndef FMC_REFSET_H_INCLUDED
+#define FMC_REFSET_H_INCLUDED
 
 /** @file */
 
@@ -83,5 +83,5 @@ const void* C_Ref_Set_Iterator_current(C_Ref_Set_Iterator* i);
 
 bool C_Ref_Set_Iterator_free(C_Ref_Set_Iterator* *iptr);
 
-#endif // CREFSET_H_INCLUDED
+#endif // FMC_REFSET_H_INCLUDED
 

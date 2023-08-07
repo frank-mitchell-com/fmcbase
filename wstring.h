@@ -20,8 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef USTRING_H_INCLUDED
-#define USTRING_H_INCLUDED
+#ifndef FMC_WSTRING_H_INCLUDED
+#define FMC_WSTRING_H_INCLUDED
 
 #include <stdbool.h> /* defines bool */
 #include <stddef.h>  /* defines int */
@@ -201,5 +201,5 @@ USTR_API bool U_String_release(U_String* *s);
  */
 USTR_API void U_String_set(U_String* *lvalue, U_String* rvalue);
 
-#endif // USTRING_H_INCLUDED
+#endif // FMC_WSTRING_H_INCLUDED
 

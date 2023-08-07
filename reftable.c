@@ -21,7 +21,7 @@
  */
 
 #include <stdlib.h>
-#include "creftbl.h"
+#include "reftable.h"
 
 #define TBLMINSIZ   5
 

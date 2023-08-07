@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "minctest.h"
-#include "cstrtbl.h"
+#include "strtable.h"
 
 static C_String_Table* t = NULL;
 

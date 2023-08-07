@@ -20,8 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef CTABLE_H_INCLUDED
-#define CTABLE_H_INCLUDED
+#ifndef FMC_TABLE_H_INCLUDED
+#define FMC_TABLE_H_INCLUDED
 
 /** @file */
 
@@ -160,4 +160,4 @@ void C_Userdata_set_pointer(C_Userdata* ud, const void* ref);
  */
 void C_Userdata_set_value(C_Userdata* ud, const void* ptr, size_t len);
 
-#endif // CTABLE_H_INCLUDED
+#endif // FMC_TABLE_H_INCLUDED

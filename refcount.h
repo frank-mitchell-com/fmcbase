@@ -20,8 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef CREFCNT_H_INCLUDED
-#define CREFCNT_H_INCLUDED
+#ifndef FMC_REFCOUNT_H_INCLUDED
+#define FMC_REFCOUNT_H_INCLUDED
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -89,5 +89,5 @@ bool C_Any_release(const void* *pptr);
  */
 void C_Any_set(const void* *lvalue, const void* value);
 
-#endif // CREFCNT_H_INCLUDED
+#endif // FMC_REFCOUNT_H_INCLUDED
 

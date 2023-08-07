@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include "ctable.h"
+#include "table.h"
 
 #define TABLE_MINSIZ    5
 #define TABLE_LOAD      0.75
@@ -306,7 +306,6 @@ static bool insert_pair(C_Table* t, const C_Userdata* key, const C_Userdata* val
                 // TODO: Yes, there's a better way to do this
                 newarray[i] = NULL;
             }
-            // bzero(&(newarray[oldlen]), (newlen - oldlen) * sizeof(C_Table_Entry*));
             t->array = newarray;
             t->arraylen = newlen;
             rehash(t);
@@ -327,7 +326,6 @@ static bool update_entry(C_Table* t, C_Table_Entry* entry, const C_Userdata* val
     }
     udfree(t, entval);
 
-    //C_Userdata_set(entval, newval.tag, newval.len, newval.ptr);
     entry->value.tag = newval.tag;
     entry->value.len = newval.len;
     entry->value.ptr = newval.ptr;
@@ -501,7 +499,6 @@ extern void C_Userdata_clear(C_Userdata* ud, bool iscopy) {
     if (!ud) return;
 
     if (iscopy && !C_Userdata_is_reference(ud)) {
-        // TODO: What if ud isn't a copy?
         free(ud->ptr);
     }
     bzero(ud, sizeof(C_Userdata));

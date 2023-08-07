@@ -20,8 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef CCONV_H_INCLUDED
-#define CCONV_H_INCLUDED
+#ifndef FMC_CONVERT_INCLUDED
+#define FMC_CONVERT_INCLUDED
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -105,4 +105,4 @@ extern size_t C_Conv_utf32_to_16(size_t insz, const utf32_t* inbuf, size_t outsz
  */
 extern ssize_t C_Conv_transcode(const char* incode, const char* outcode, size_t insz, octet_t* inbuf, size_t outsz, octet_t* outbuf, ssize_t* nread);
 
-#endif // CCONV_H_INCLUDED
+#endif // FMC_CONVERT_INCLUDED

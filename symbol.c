@@ -23,12 +23,12 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "crefcnt.h"
-#include "crefset.h"
-#include "cstrtbl.h"
-#include "cthread.h"
+#include "refcount.h"
+#include "refset.h"
+#include "strtable.h"
+#include "thread.h"
 
-#include "csymbol.h"
+#include "symbol.h"
 
 /*
  * Both tables have to be thread-safe.  For simplicity we'll use a 

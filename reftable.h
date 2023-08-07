@@ -20,8 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef CREFTBL_H_INCLUDED
-#define CREFTBL_H_INCLUDED
+#ifndef FMC_REFTABLE_H_INCLUDED
+#define FMC_REFTABLE_H_INCLUDED
 
 /** @file */
 
@@ -86,5 +86,5 @@ bool C_Ref_Table_remove(C_Ref_Table* t, const void* key, const void* *oldvalp);
  */
 void C_Ref_Table_free(C_Ref_Table* *tptr);
 
-#endif // CREFTBL_H_INCLUDED
+#endif // FMC_REFTABLE_H_INCLUDED
 

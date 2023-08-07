@@ -23,11 +23,11 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "cthread.h"
-#include "ctable.h"
-#include "crefset.h"
-#include "creftbl.h"
-#include "crefcnt.h"
+#include "thread.h"
+#include "table.h"
+#include "refset.h"
+#include "reftable.h"
+#include "refcount.h"
 
 /* -------------------------- PRIVATE FUNCTIONS -------------------------- */
 

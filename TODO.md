@@ -13,6 +13,15 @@
   - Invalid encoding detection & signalling
   - Check endianness for UTF-16 and UTF-32
 
+- `C_Ref_Set`
+   - collision metrics
+
+- `C_Ref_Table`
+   - collision metrics
+
+- `C_String_Table`
+   - collision metrics
+
 - `C_Table`
    - collision metrics
 
@@ -89,9 +98,5 @@
 
 ## DOCUMENTATION
 
-- Tighter README.md
-
 - Doxygen documentation of all header files
-
-- Design and implementation notes
 

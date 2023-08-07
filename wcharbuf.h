@@ -20,10 +20,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef UCHARBUF_H_INCLUDED
-#define UCHARBUF_H_INCLUDED
+#ifndef FMC_WCHARBUF_H_INCLUDED
+#define FMC_WCHARBUF_H_INCLUDED
 
-#include "ustring.h"
+#include "wstring.h"
 
 #define USTR_API    extern
 
@@ -65,5 +65,5 @@ USTR_API void U_Char_Buffer_release(U_Char_Buffer* *bptr);
 
 USTR_API void U_Char_Buffer_set(U_Char_Buffer* *lvalue, U_Char_Buffer* rvalue);
 
-#endif // UCHARBUF_H_INCLUDED
+#endif // FMC_WCHARBUF_H_INCLUDED
 

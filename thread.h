@@ -20,5 +20,29 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "ucharbuf.h"
+#ifndef FMC_THREAD_H_INCLUDED
+#define FMC_THREAD_H_INCLUDED
+
+/** @file
+ * Macros for thread portability.
+ */
+
+#include <pthread.h>
+
+#define LOCK_DECL(x)        pthread_mutex_t (x) = PTHREAD_MUTEX_INITIALIZER
+#define LOCK_TYPE(x)        pthread_mutex_t (x)
+#define LOCK_INIT(x)        pthread_mutex_init(&(x), NULL)
+#define LOCK_ACQUIRE(x)     pthread_mutex_lock(&(x))
+#define LOCK_RELEASE(x)     pthread_mutex_unlock(&(x))
+#define LOCK_FREE(x)        pthread_mutex_destroy(&(x))
+
+#define RWLOCK_DECL(x)      pthread_rwlock_t (x) = PTHREAD_RWLOCK_INITIALIZER
+#define RWLOCK_TYPE(x)      pthread_rwlock_t (x)
+#define RWLOCK_INIT(x)      pthread_rwlock_init(&(x), NULL)
+#define RWLOCK_ACQ_READ(x)  pthread_rwlock_rdlock(&(x))
+#define RWLOCK_ACQ_WRITE(x) pthread_rwlock_wrlock(&(x))
+#define RWLOCK_RELEASE(x)   pthread_rwlock_unlock(&(x))
+#define RWLOCK_FREE(x)      pthread_rwlock_destroy(&(x))
+
+#endif // FMC_THREAD_H_INCLUDED
 

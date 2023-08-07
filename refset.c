@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include "crefset.h"
+#include "refset.h"
 
 #define TABLE_MINSIZ    5
 #define TABLE_LOAD      0.75
@@ -36,35 +36,35 @@ struct C_Ref_Set {
 };
 
 
-extern void C_Ref_Set_new(C_Ref_Set* *tptr, size_t minsz) {
-    C_Ref_Set* t;
-    if (!tptr) return;
-    (*tptr) = NULL;
+extern void C_Ref_Set_new(C_Ref_Set* *rsptr, size_t minsz) {
+    C_Ref_Set* rs;
+    if (!rsptr) return;
+    (*rsptr) = NULL;
 
-    t = malloc(sizeof(C_Ref_Set));
-    if (!t) return;
+    rs = malloc(sizeof(C_Ref_Set));
+    if (!rs) return;
 
-    bzero(t, sizeof(C_Ref_Set));
-    t->arraylen = (minsz > TABLE_MINSIZ) ? minsz : TABLE_MINSIZ;
-    t->array    = calloc(t->arraylen, sizeof(void*));
-    t->nentries = 0;
+    bzero(rs, sizeof(C_Ref_Set));
+    rs->arraylen = (minsz > TABLE_MINSIZ) ? minsz : TABLE_MINSIZ;
+    rs->array    = calloc(rs->arraylen, sizeof(void*));
+    rs->nentries = 0;
 
-    (*tptr) = t;
+    (*rsptr) = rs;
 }
 
-extern void C_Ref_Set_free(C_Ref_Set* *tptr) {
-    C_Ref_Set* t;
+extern void C_Ref_Set_free(C_Ref_Set* *rsptr) {
+    C_Ref_Set* rs;
 
-    if (!tptr) return;
-    t = *tptr;
+    if (!rsptr) return;
+    rs = *rsptr;
 
-    free(t->array);
-    free(t);
-    tptr = NULL;
+    free(rs->array);
+    free(rs);
+    rsptr = NULL;
 }
 
-extern size_t C_Ref_Set_size(C_Ref_Set* t) {
-    return t->nentries;
+extern size_t C_Ref_Set_size(C_Ref_Set* rs) {
+    return rs->nentries;
 }
 
 /* ---------------------- Table Entry Functions --------------------------*/
@@ -91,9 +91,9 @@ static int search(const void* *array, size_t len, const void* target, int start)
     }
 }
 
-static int find_entry(C_Ref_Set* t, const void* p) {
-    const void** array = t->array;
-    size_t len = t->arraylen;
+static int find_entry(C_Ref_Set* rs, const void* p) {
+    const void** array = rs->array;
+    size_t len = rs->arraylen;
     int result = hashcode(p) % len;
 
     if (array[result] == p) {
@@ -120,66 +120,66 @@ static const void** rehash(const void* *oldarray, size_t oldlen, size_t newlen) 
     return newarray;
 }
 
-static bool insert_entry(C_Ref_Set* t, const void* p) {
+static bool insert_entry(C_Ref_Set* rs, const void* p) {
     int index;
 
     // Make the array bigger if warranted
-    if (t->nentries >= TABLE_LOAD * t->arraylen) {
-        size_t oldlen = t->arraylen;
+    if (rs->nentries >= TABLE_LOAD * rs->arraylen) {
+        size_t oldlen = rs->arraylen;
         size_t newlen = oldlen * 2 + 1;
-        const void** newarray = rehash(t->array, oldlen, newlen);
+        const void** newarray = rehash(rs->array, oldlen, newlen);
 
         if (newarray != NULL) {
-            t->array = newarray;
-            t->arraylen = newlen;
+            rs->array = newarray;
+            rs->arraylen = newlen;
         }
     }
 
-    index = hashcode(p) % t->arraylen;
+    index = hashcode(p) % rs->arraylen;
 
-    if (t->array[index] != NULL) {
-        index = search(t->array, t->arraylen, NULL, index); 
+    if (rs->array[index] != NULL) {
+        index = search(rs->array, rs->arraylen, NULL, index); 
         if (index < 0) {
             return false;
         }
     }
 
-    if (t->array[index] == NULL) {
-        t->nentries++;
+    if (rs->array[index] == NULL) {
+        rs->nentries++;
     }
-    t->array[index] = p;
+    rs->array[index] = p;
 
     return true;
 }
 
-extern bool C_Ref_Set_add(C_Ref_Set* t, const void* p) {
+extern bool C_Ref_Set_add(C_Ref_Set* rs, const void* p) {
     int index = -1;
 
     if (!p) return false;
 
-    index = find_entry(t, p);
+    index = find_entry(rs, p);
     if (index < 0) {
-        bool result = insert_entry(t, p);
+        bool result = insert_entry(rs, p);
         return result;
     }
     return false;
 }
 
-extern bool C_Ref_Set_has(C_Ref_Set* t, const void* p) {
+extern bool C_Ref_Set_has(C_Ref_Set* rs, const void* p) {
     if (!p) return false;
 
-    return find_entry(t, p) >= 0;
+    return find_entry(rs, p) >= 0;
 }
 
-extern bool C_Ref_Set_remove(C_Ref_Set* t, const void* p) {
+extern bool C_Ref_Set_remove(C_Ref_Set* rs, const void* p) {
     int index = -1;
 
     if (!p) return false;
 
-    index = find_entry(t, p);
+    index = find_entry(rs, p);
     if (index >= 0) {
-        t->array[index] = NULL;
-        t->nentries--;
+        rs->array[index] = NULL;
+        rs->nentries--;
         return true;
     }
     return false;
@@ -188,22 +188,22 @@ extern bool C_Ref_Set_remove(C_Ref_Set* t, const void* p) {
 /* -------------------- Iterator Functions ------------------------- */
 
 struct C_Ref_Set_Iterator {
-    C_Ref_Set* t;
+    C_Ref_Set* rs;
     int64_t    curr;
     int64_t    next;
 };
 
-extern void C_Ref_Set_new_iterator(C_Ref_Set* t, C_Ref_Set_Iterator* *iptr) {
+extern void C_Ref_Set_new_iterator(C_Ref_Set* rs, C_Ref_Set_Iterator* *iptr) {
     C_Ref_Set_Iterator* result;
 
     result = malloc(sizeof(C_Ref_Set_Iterator));
 
-    result->t    = t;
+    result->rs    = rs;
     result->curr = -1;
     result->next = -1;
 
-    for (size_t j = 0; j < t->arraylen; j++) {
-        if (t->array[j] != NULL) {
+    for (size_t j = 0; j < rs->arraylen; j++) {
+        if (rs->array[j] != NULL) {
             result->next = j;
             break;
         }
@@ -217,8 +217,8 @@ extern bool C_Ref_Set_Iterator_has_next(C_Ref_Set_Iterator* i) {
 }
 
 extern void C_Ref_Set_Iterator_next(C_Ref_Set_Iterator* i) {
-    size_t len = i->t->arraylen;
-    const void** arr = i->t->array;
+    size_t len = i->rs->arraylen;
+    const void** arr = i->rs->array;
 
     i->curr = i->next;
 
@@ -234,8 +234,8 @@ extern void C_Ref_Set_Iterator_next(C_Ref_Set_Iterator* i) {
 }
 
 extern const void* C_Ref_Set_Iterator_current(C_Ref_Set_Iterator* i) {
-    if (i->curr < 0 || i->curr >= i->t->arraylen) return NULL;
-    return i->t->array[i->curr];
+    if (i->curr < 0 || i->curr >= i->rs->arraylen) return NULL;
+    return i->rs->array[i->curr];
 }
 
 extern bool C_Ref_Set_Iterator_free(C_Ref_Set_Iterator* *iptr) {

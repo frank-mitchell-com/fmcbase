@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "minctest.h"
-#include "creftbl.h"
+#include "reftable.h"
 
 static C_Ref_Table* t = NULL;
 

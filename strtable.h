@@ -20,8 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef CSTRTBL_H_INCLUDED
-#define CSTRTBL_H_INCLUDED
+#ifndef FMC_STRTABLE_H_INCLUDED
+#define FMC_STRTABLE_H_INCLUDED
 
 /** @file */
 
@@ -86,5 +86,5 @@ bool C_String_Table_remove(C_String_Table* t, size_t keylen, const uint8_t* key,
 void C_String_Table_free(C_String_Table* *tptr);
 
 
-#endif // CSTRTBL_H_INCLUDED
+#endif // FMC_STRTABLE_H_INCLUDED
 

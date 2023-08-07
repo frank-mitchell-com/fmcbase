@@ -23,10 +23,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include "cthread.h"
-#include "cconv.h"
-#include "crefcnt.h"
-#include "ustring.h"
+#include "thread.h"
+#include "convert.h"
+#include "refcount.h"
+#include "wstring.h"
 
 static void* default_alloc(void* unused, void* p, size_t nmem, size_t sz) {
     if (p != NULL) {

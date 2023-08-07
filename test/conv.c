@@ -27,7 +27,7 @@
 #include <strings.h>
 #include <wchar.h>
 #include "minctest.h"
-#include "cconv.h"
+#include "convert.h"
 
 #define STRBUFSIZ  512 
 

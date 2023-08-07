@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <strings.h>
 #include "minctest.h"
-#include "crefcnt.h"
+#include "refcount.h"
 
 #define STRBUFSIZ   20
 

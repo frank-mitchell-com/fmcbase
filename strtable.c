@@ -21,8 +21,8 @@
  */
 
 #include <stdlib.h>
-#include "ctable.h"
-#include "cstrtbl.h"
+#include "table.h"
+#include "strtable.h"
 
 struct C_String_Table {
     C_Table* t;

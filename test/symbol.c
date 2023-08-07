@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <strings.h>
 #include "minctest.h"
-#include "csymbol.h"
+#include "symbol.h"
 
 #define STRBUFSIZ   20
 

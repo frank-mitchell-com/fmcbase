@@ -20,8 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef CSYMBOL_H_INCLUDED
-#define CSYMBOL_H_INCLUDED
+#ifndef FMC_SYMBOL_H_INCLUDED
+#define FMC_SYMBOL_H_INCLUDED
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -113,4 +113,4 @@ const uint8_t* C_Symbol_as_utf8_string(C_Symbol* sym, size_t *lenptr);
  */
 ssize_t C_Symbol_as_cstring(C_Symbol* sym, size_t len, char* buf);
 
-#endif // CSYMBOL_H_INCLUDED
+#endif // FMC_SYMBOL_H_INCLUDED

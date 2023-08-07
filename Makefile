@@ -6,28 +6,31 @@ CC=gcc
 LIBNAME=ctable
 
 SRCDIR=.
-OBJDIR=.
-LIBDIR=.
 TESTDIR=test
 
-LIB=$(LIBDIR)/lib$(LIBNAME).a
-SHLIB=$(LIBDIR)/lib$(LIBNAME).so
+DESTDIR=/usr/local
+DESTHDR=$(DESTDIR)/include/$(LIBNAME)
+DESTLIB=$(DESTIB)/lib
+
+LIB=$(SRCDIR)/lib$(LIBNAME).a
+SHLIB=$(SRCDIR)/lib$(LIBNAME).so
 
 CFLAGS=-g -Wall -fPIC
-LFLAGS=-L$(LIBDIR) -l$(LIBNAME) -lm
+IFLAGS= -I $(SRCDIR) -I $(TESTDIR)
+LFLAGS=-L$(SRCDIR) -l$(LIBNAME) -lm
 
 HEADERS=$(wildcard $(SRCDIR)/*.h)
 OBJECTS=$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/*.c))
 TESTS=$(patsubst %.c,%.run,$(wildcard $(TESTDIR)/*.c))
 
-.PHONY: all clean test runtest
+.PHONY: all clean test install
 
 all: $(LIB) $(SHLIB) test
 
 test: $(TESTS)
 
 %.run: %.c $(LIB) $(HEADERS)
-	$(CC) -static -g -O0 -I $(SRCDIR) -I $(TESTDIR) -o $@ $< $(LFLAGS)
+	$(CC) -static -g -O0 $(IFLAGS) -o $@ $< $(LFLAGS)
 	./$@
 
 $(SHLIB): $(OBJECTS)
@@ -39,7 +42,10 @@ $(LIB): $(OBJECTS)
 %.o: %.c $(HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
+install: $(LIB) $(SHLIB)
+	install -t $(DESTLIB) $(LIB) $(SHLIB)
+	install -t $(DESTHDR) $(HEADERS)
+
 clean:
 	rm -rf $(OBJECTS) $(LIB) $(SHLIB) $(TESTS)
-
 

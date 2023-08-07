@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "minctest.h"
-#include "crefset.h"
+#include "refset.h"
 
 static C_Ref_Set* t = NULL;
 
