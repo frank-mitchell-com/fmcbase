@@ -36,7 +36,7 @@ struct C_Ref_Table {
     size_t      npairs;
 };
 
-extern void C_Ref_Table_new(C_Ref_Table* *tptr, size_t minsz) {
+FMC_API void C_Ref_Table_new(C_Ref_Table* *tptr, size_t minsz) {
     C_Ref_Table* self;
     C_Ref_Pair*  data;
     size_t       len;
@@ -87,11 +87,11 @@ static ssize_t find_key(C_Ref_Pair data[], size_t len, const void* k, bool searc
     }
 }
 
-extern size_t C_Ref_Table_size(C_Ref_Table* self) {
+FMC_API size_t C_Ref_Table_size(C_Ref_Table* self) {
     return self->npairs;
 }
 
-extern const void* C_Ref_Table_get(C_Ref_Table* self, const void* k) {
+FMC_API const void* C_Ref_Table_get(C_Ref_Table* self, const void* k) {
     ssize_t index = find_key(self->data, self->len, k, true);
     if (index < 0) {
         return NULL;
@@ -99,7 +99,7 @@ extern const void* C_Ref_Table_get(C_Ref_Table* self, const void* k) {
     return self->data[index].value;
 }
 
-extern bool C_Ref_Table_has(C_Ref_Table* self, const void* k) {
+FMC_API bool C_Ref_Table_has(C_Ref_Table* self, const void* k) {
     return find_key(self->data, self->len, k, true) >= 0;
 }
 
@@ -132,7 +132,7 @@ static bool rehash(C_Ref_Table* self) {
     return true;
 }
 
-extern bool C_Ref_Table_put(C_Ref_Table* self, const void* k, const void* v, const void* *oldvalp) {
+FMC_API bool C_Ref_Table_put(C_Ref_Table* self, const void* k, const void* v, const void* *oldvalp) {
     ssize_t index;
 
     if (self->npairs > self->len * 0.75) {
@@ -159,7 +159,7 @@ extern bool C_Ref_Table_put(C_Ref_Table* self, const void* k, const void* v, con
     return true;
 }
 
-extern bool C_Ref_Table_remove(C_Ref_Table* self, const void* k, const void* *oldvalp) {
+FMC_API bool C_Ref_Table_remove(C_Ref_Table* self, const void* k, const void* *oldvalp) {
     ssize_t index = find_key(self->data, self->len, k, true);
     if (index < 0) {
         return false;
@@ -175,7 +175,7 @@ extern bool C_Ref_Table_remove(C_Ref_Table* self, const void* k, const void* *ol
     return true;
 }
 
-void C_Ref_Table_free(C_Ref_Table* *selfptr) {
+FMC_API void C_Ref_Table_free(C_Ref_Table* *selfptr) {
     C_Ref_Table* self = selfptr ? *selfptr : NULL;
     if (!self) {
         return;

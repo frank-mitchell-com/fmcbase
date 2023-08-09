@@ -53,8 +53,8 @@ struct _U_String {
     wchar_t*  wcs_arr;
 };
 
-// TODO: Implement compressed strings, i.e. use arrays of uint16_t 
-// or uint8_t where the characters fit entirely into UCS-2 (sans surrogates),
+// TODO: Implement compressed strings, i.e. use arrays of ussize_t16_t 
+// or ussize_t8_t where the characters fit entirely ssize_to UCS-2 (sans surrogates),
 // Latin-1, or ASCII.  See Java 9 java.lang.String for inspiration.
 
 static void* ustr_alloc(size_t nm, size_t sz) {
@@ -80,7 +80,7 @@ static bool make_utf32_string(const char* charset, size_t insz, const octet_t* i
     size_t bufsz = insz+2;
     wchar_t buffer[bufsz];
 
-    written = C_Conv_transcode(charset, "UTF-32", 
+    written = C_Conv_transcode(charset, UTF_32, 
                                     insz, 
                                     (octet_t*)inbuf, 
                                     bufsz * sizeof(wchar_t), 
@@ -142,43 +142,44 @@ static void free_string(U_String* s) {
     free(s);
 }
 
-USTR_API void U_String_set_allocator(u_string_alloc func, void *data) {
+FMC_API void U_String_set_allocator(u_string_alloc func, void *data) {
     RWLOCK_ACQ_WRITE(_alloc_lock);
     _alloc_data = data;
     _alloc_func = func;
     RWLOCK_RELEASE(_alloc_lock);
 }
 
-USTR_API bool U_String_new_ascii(U_String* *sp, size_t sz, const char* buf) {
+FMC_API bool U_String_new_ascii(U_String* *sp, size_t sz, const char* buf) {
     if (C_Conv_is_ascii(sz, buf)) {
-        return make_string(sp, "ASCII", sz, sizeof(octet_t), buf);
+        return make_string(sp, ASCII, sz, sizeof(octet_t), buf);
     } else {
-        return make_string(sp, "UTF-8", sz, sizeof(octet_t), buf);
+        // TODO: Use locale instead
+        return make_string(sp, UTF_8, sz, sizeof(octet_t), buf);
     }
 }
 
-USTR_API bool U_String_new_utf8(U_String* *sp, size_t sz, const utf8_t* buf) {
-    return make_string(sp, "UTF-8", sz, sizeof(utf8_t), buf);
+FMC_API bool U_String_new_utf8(U_String* *sp, size_t sz, const utf8_t* buf) {
+    return make_string(sp, UTF_8, sz, sizeof(utf8_t), buf);
 }
 
-USTR_API bool U_String_new_utf16(U_String* *sp, size_t sz, const utf16_t* buf) {
-    return make_string(sp, "UTF-16", sz, sizeof(utf16_t), buf);
+FMC_API bool U_String_new_utf16(U_String* *sp, size_t sz, const utf16_t* buf) {
+    return make_string(sp, UTF_16, sz, sizeof(utf16_t), buf);
 }
 
-USTR_API bool U_String_new_utf32(U_String* *sp, size_t sz, const wchar_t* buf) {
-    return make_string(sp, "UTF-32", sz, sizeof(wchar_t), buf);
+FMC_API bool U_String_new_utf32(U_String* *sp, size_t sz, const wchar_t* buf) {
+    return make_string(sp, UTF_32, sz, sizeof(wchar_t), buf);
 }
 
-USTR_API bool U_String_new_encoded(U_String* *sp, const char* charset, size_t sz, const octet_t* buf) {
+FMC_API bool U_String_new_encoded(U_String* *sp, const char* charset, size_t sz, const octet_t* buf) {
     return make_string(sp, charset, sz, sizeof(octet_t), buf);
 }
 
-USTR_API bool U_String_new_from_cstring(U_String* *sp, const char* cstr) {
+FMC_API bool U_String_new_from_cstring(U_String* *sp, const char* cstr) {
     size_t len = strlen(cstr);
     return U_String_new_ascii(sp, len, cstr);
 }
 
-USTR_API wchar_t U_String_char_at(U_String* s, size_t i) {
+FMC_API wchar_t U_String_char_at(U_String* s, size_t i) {
     if (i >= s->wcs_len) {
         return 0;
     } else {
@@ -186,62 +187,72 @@ USTR_API wchar_t U_String_char_at(U_String* s, size_t i) {
     }
 }
 
-USTR_API size_t U_String_length(U_String* s) {
+FMC_API size_t U_String_length(U_String* s) {
     return s->wcs_len;
 }
 
-USTR_API size_t U_String_to_utf8(U_String* s, size_t offset, size_t max, utf8_t* buf) {
+FMC_API size_t U_String_to_utf8(U_String* s, size_t offset, size_t max, utf8_t* buf) {
     // Need to write the final null byte.
     return C_Conv_utf32_to_8(s->wcs_len+1, s->wcs_arr, max, buf+offset);
 }
 
-USTR_API size_t U_String_to_utf32(U_String* s, size_t offset, size_t max, wchar_t* buf) {
+FMC_API size_t U_String_to_utf32(U_String* s, size_t offset, size_t max, utf32_t* buf) {
     // Need to write the final null byte.
     size_t safesz = (max < s->wcs_len+1) ? max : s->wcs_len+1;
     return (size_t)wmemcpy(buf+offset, s->wcs_arr, safesz);
 }
 
-USTR_API size_t U_String_each(U_String* s, void* data, u_iterator f) {
+FMC_API ssize_t U_String_to_charset(U_String* s, const char* charset, size_t offset, size_t max, octet_t* buf) {
+    // Need to write the final null byte.
+    return C_Conv_transcode(UTF_32, charset, 
+                                    (s->wcs_len+1)*sizeof(wchar_t), 
+                                    (octet_t*)s->wcs_arr, 
+                                    max, 
+                                    buf+offset, 
+                                    NULL);
+}
+
+FMC_API size_t U_String_each(U_String* s, void* data, u_iterator f) {
     return 0;
 }
 
-USTR_API size_t U_String_each_after(U_String* s, size_t index, void* data, u_iterator f) {
+FMC_API size_t U_String_each_after(U_String* s, size_t index, void* data, u_iterator f) {
     return 0;
 }
 
-USTR_API bool U_String_slice(U_String* *sp, U_String* s, int first, int last) {
+FMC_API bool U_String_slice(U_String* *sp, U_String* s, ssize_t first, ssize_t last) {
     return false;
 }
 
-USTR_API bool U_String_slice_from(U_String* *sp, U_String* s, int first) {
+FMC_API bool U_String_slice_from(U_String* *sp, U_String* s, ssize_t first) {
+    return U_String_slice(sp, s, first, -1);
+}
+
+FMC_API bool U_String_slice_to(U_String* *sp, U_String* s, ssize_t last) {
+    return U_String_slice(sp, s, 0, last);
+}
+
+FMC_API bool U_String_join(U_String* *sp, U_String* head, U_String* tail) {
     return false;
 }
 
-USTR_API bool U_String_slice_to(U_String* *sp, U_String* s, int last) {
+FMC_API bool U_String_join_n(U_String* *sp, size_t n, ...) {
     return false;
 }
 
-USTR_API bool U_String_join(U_String* *sp, U_String* head, U_String* tail) {
-    return false;
-}
-
-USTR_API bool U_String_join_n(U_String* *sp, size_t n, ...) {
-    return false;
-}
-
-USTR_API bool U_String_is_live(U_String* s) {
+FMC_API bool U_String_is_live(U_String* s) {
     return C_Ref_Count_is_listed(s);
 }
 
-USTR_API size_t U_String_references(U_String* s) {
+FMC_API size_t U_String_references(U_String* s) {
     return C_Ref_Count_refcount(s);
 }
 
-USTR_API U_String* U_String_retain(U_String* s) {
+FMC_API U_String* U_String_retain(U_String* s) {
     return (U_String*)C_Any_retain(s);
 }
 
-USTR_API bool U_String_release(U_String* *sp) {
+FMC_API bool U_String_release(U_String* *sp) {
     U_String* s = (sp) ? *sp : NULL;
     bool result = C_Any_release((const void**)sp);
     if (result && s && U_String_references(s) == 0) {
@@ -251,7 +262,7 @@ USTR_API bool U_String_release(U_String* *sp) {
     return result;
 }
 
-USTR_API void U_String_set(U_String* *lvalue, U_String* rvalue) {
+FMC_API void U_String_set(U_String* *lvalue, U_String* rvalue) {
     C_Any_set((const void**)lvalue, (const void*)rvalue);
 }
 

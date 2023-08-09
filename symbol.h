@@ -23,9 +23,7 @@
 #ifndef FMC_SYMBOL_H_INCLUDED
 #define FMC_SYMBOL_H_INCLUDED
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <sys/types.h>
+#include "common.h"
 
 /**
  * A unique value sometimes tied to a string value.
@@ -38,7 +36,7 @@ typedef struct C_Symbol C_Symbol;
  * The implementation checks the value of `p` instead of dereferencing it,
  * in case it points to an invalid memory location.
  */
-bool is_C_Symbol(void* p);
+FMC_API bool is_C_Symbol(void* p);
 
 /**
  * Create a new Symbol value unique in the current instance of the host program.
@@ -46,7 +44,7 @@ bool is_C_Symbol(void* p);
  * instances in memory.
  * The Symbol has no corresponding string value.
  */
-void C_Symbol_new(C_Symbol* *symptr);
+FMC_API void C_Symbol_new(C_Symbol* *symptr);
 
 /**
  * Provide a Symbol value unique in current memory, indexed by `cstr`.
@@ -55,7 +53,7 @@ void C_Symbol_new(C_Symbol* *symptr);
  * but this is not a hard and fast rule.
  * Returns whether the symbol was recently allocated.
  */
-bool C_Symbol_for_cstring(C_Symbol* *symptr, const char* cstr);
+FMC_API bool C_Symbol_for_cstring(C_Symbol* *symptr, const char* cstr);
 
 /**
  * Provide a Symbol value unique in current memory, 
@@ -65,32 +63,32 @@ bool C_Symbol_for_cstring(C_Symbol* *symptr, const char* cstr);
  * but this is not a hard and fast rule.
  * Returns whether the symbol was recently allocated.
  */
-bool C_Symbol_for_utf8_string(C_Symbol* *symptr, size_t len, const uint8_t* uptr);
+FMC_API bool C_Symbol_for_utf8_string(C_Symbol* *symptr, size_t len, const uint8_t* uptr);
 
 /**
  * The number of references to this symbol, assuming proper reference counting
  * discipline.
  */
-int C_Symbol_references(C_Symbol* sym);
+FMC_API int C_Symbol_references(C_Symbol* sym);
 
 /**
  * Increments the reference count to `sym`.
  * Returns the argument, for convenience.
  */
-C_Symbol* C_Symbol_retain(C_Symbol* sym);
+FMC_API C_Symbol* C_Symbol_retain(C_Symbol* sym);
 
 /**
  * Decrements the reference count to the symbol and
  * sets the contents of `*symptr` to NULL.
  */
-void C_Symbol_release(C_Symbol* *symptr);
+FMC_API void C_Symbol_release(C_Symbol* *symptr);
 
 /**
  * Notify the system that the caller will replace the reference contained
  * in `*lvalptr` with `value`.  This will adjust reference counts accordingly.
  * Returns `value` for convenience.
  */
-void C_Symbol_set(C_Symbol* *lvalptr, C_Symbol* value);
+FMC_API void C_Symbol_set(C_Symbol* *lvalptr, C_Symbol* value);
 
 /**
  * The value of the string used to create the symbol.
@@ -101,7 +99,7 @@ void C_Symbol_set(C_Symbol* *lvalptr, C_Symbol* value);
  * The string may contain embedded nulls, so
  * `*lenptr` will indicate the strings total length.
  */
-const uint8_t* C_Symbol_as_utf8_string(C_Symbol* sym, size_t *lenptr);
+FMC_API const uint8_t* C_Symbol_as_utf8_string(C_Symbol* sym, size_t *lenptr);
 
 /**
  * Copy the first `len` bytes of the string used to create `sym` into `buf`.
@@ -111,6 +109,6 @@ const uint8_t* C_Symbol_as_utf8_string(C_Symbol* sym, size_t *lenptr);
  * if 0 the symbol has no corresponding string value,
  * and if negative `sym` is not a C_Symbol.
  */
-ssize_t C_Symbol_as_cstring(C_Symbol* sym, size_t len, char* buf);
+FMC_API ssize_t C_Symbol_as_cstring(C_Symbol* sym, size_t len, char* buf);
 
 #endif // FMC_SYMBOL_H_INCLUDED

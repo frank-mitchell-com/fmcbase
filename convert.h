@@ -23,79 +23,68 @@
 #ifndef FMC_CONVERT_INCLUDED
 #define FMC_CONVERT_INCLUDED
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <sys/types.h>
-#include <wchar.h>
-
-#define UTF_8   "UTF-8"
-#define UTF_32  "UTF-32"
-
-typedef uint8_t  octet_t;
-typedef uint8_t  utf8_t;
-typedef uint16_t utf16_t;
-typedef wchar_t  utf32_t;
+#include "common.h"
 
 /**
  * Determine whether a string is pure ASCII.
  * `false` implies UTF-8 or a Latin encoding.
  */
-extern bool C_Conv_is_ascii(size_t sz, const char* buf);
+FMC_API bool C_Conv_is_ascii(size_t sz, const char* buf);
 
 /**
  * Determine the minimum number of bytes required to represent all `sz`
  * characters in UTF-16 string `buf`.
  */
-extern unsigned int C_Conv_min_bytes(size_t sz, const utf32_t* buf);
+FMC_API unsigned int C_Conv_min_bytes(size_t sz, const utf32_t* buf);
 
 /**
  * Determine the minimum number of bytes required to represent all `sz`
  * characters in UTF-16 string `buf`.
  */
-extern unsigned int C_Conv_min_bytes_utf16(size_t sz, const utf16_t* buf);
+FMC_API unsigned int C_Conv_min_bytes_utf16(size_t sz, const utf16_t* buf);
 
 /**
  * Determine the minimum number of bytes required to represent all `sz`
  * characters in UTF-8 string `buf`.
  */
-extern unsigned int C_Conv_min_bytes_utf8(size_t sz, const utf8_t* buf);
+FMC_API unsigned int C_Conv_min_bytes_utf8(size_t sz, const utf8_t* buf);
 
 /**
  * The length of the resulting string if the first `sz` UTF-8 characters
  * in `buf` were converted to 16-bit characters.
  */
-extern size_t C_Conv_utf8_to_16_length(size_t sz, const utf8_t* buf, size_t *csz);
+FMC_API size_t C_Conv_utf8_to_16_length(size_t sz, const utf8_t* buf, size_t *csz);
 
 /**
  * The length of the resulting string if the first `sz` UTF-8 characters
  * in `buf` were converted to UTF-32.
  */
-extern size_t C_Conv_utf8_to_32_length(size_t sz, const utf8_t* buf, size_t *csz);
+FMC_API size_t C_Conv_utf8_to_32_length(size_t sz, const utf8_t* buf, size_t *csz);
 
 /**
  * The length of the resulting string if the first `sz` UTF-16 characters
  * in `buf` were converted to UTF-8.
  */
-extern size_t C_Conv_utf16_to_8_length(size_t sz, const utf16_t* buf, size_t *csz);
+FMC_API size_t C_Conv_utf16_to_8_length(size_t sz, const utf16_t* buf, size_t *csz);
 
 /**
  * The length of the resulting string if the first `sz` UTF-32 characters
  * in `buf` were converted to UTF-8.
  */
-extern size_t C_Conv_utf32_to_8_length(size_t sz, const utf32_t* buf, size_t *csz);
+FMC_API size_t C_Conv_utf32_to_8_length(size_t sz, const utf32_t* buf, size_t *csz);
 
 
-extern size_t C_Conv_utf8_to_16(size_t insz, const utf8_t* inbuf, size_t outsz, utf16_t* outbuf);
+FMC_API size_t C_Conv_utf8_to_16(size_t insz, const utf8_t* inbuf, size_t outsz, utf16_t* outbuf);
 
-extern size_t C_Conv_utf8_to_32(size_t insz, const utf8_t* inbuf, size_t outsz, utf32_t* outbuf);
+FMC_API size_t C_Conv_utf8_to_32(size_t insz, const utf8_t* inbuf, size_t outsz, utf32_t* outbuf);
 
-extern size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz, utf8_t* outbuf);
+FMC_API size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz, utf8_t* outbuf);
 
-extern size_t C_Conv_utf16_to_32(size_t insz, const utf16_t* inbuf, size_t outsz, utf32_t* outbuf);
+FMC_API size_t C_Conv_utf16_to_32(size_t insz, const utf16_t* inbuf, size_t outsz, utf32_t* outbuf);
 
-extern size_t C_Conv_utf32_to_8(size_t insz, const utf32_t* inbuf, size_t outsz, utf8_t* outbuf);
+FMC_API size_t C_Conv_utf32_to_8(size_t insz, const utf32_t* inbuf, size_t outsz, utf8_t* outbuf);
 
-extern size_t C_Conv_utf32_to_16(size_t insz, const utf32_t* inbuf, size_t outsz, utf16_t* outbuf);
+FMC_API size_t C_Conv_utf32_to_16(size_t insz, const utf32_t* inbuf, size_t outsz, utf16_t* outbuf);
 
 /**
  * Converts `insz` bytes at `inbuf` encoded via character encoding `incode` 
@@ -103,6 +92,6 @@ extern size_t C_Conv_utf32_to_16(size_t insz, const utf32_t* inbuf, size_t outsz
  * If given, `nreadp` contains the number of bytes actually read from `inbuf`.
  * The function returns the number of bytes written to `outbuf`.
  */
-extern ssize_t C_Conv_transcode(const char* incode, const char* outcode, size_t insz, octet_t* inbuf, size_t outsz, octet_t* outbuf, ssize_t* nread);
+FMC_API ssize_t C_Conv_transcode(const char* incode, const char* outcode, size_t insz, octet_t* inbuf, size_t outsz, octet_t* outbuf, ssize_t* nread);
 
 #endif // FMC_CONVERT_INCLUDED

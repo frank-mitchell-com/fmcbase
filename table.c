@@ -91,7 +91,7 @@ struct C_Table {
     C_Userdata_Free rm;
 };
 
-extern void C_Table_new(C_Table* *tptr, size_t minsz) {
+FMC_API void C_Table_new(C_Table* *tptr, size_t minsz) {
     C_Table* t;
     if (!tptr) return;
     (*tptr) = NULL;
@@ -153,7 +153,7 @@ static void udfree(C_Table* t, C_Userdata* ud) {
     }
 }
 
-extern void C_Table_free(C_Table* *tptr) {
+FMC_API void C_Table_free(C_Table* *tptr) {
     C_Table* t;
 
     if (!tptr) return;
@@ -223,11 +223,11 @@ static void rehash(C_Table* t) {
 
 /* --------------------- Configuration Functions -------------------------*/
 
-extern size_t C_Table_size(C_Table* t) {
+FMC_API size_t C_Table_size(C_Table* t) {
     return t->nentries;
 }
 
-extern void C_Table_define_hash_function(C_Table* t, C_Table_Hash f) {
+FMC_API void C_Table_define_hash_function(C_Table* t, C_Table_Hash f) {
     if (t == NULL) return;
     if (f == NULL) {
         t->hash = default_hash;
@@ -237,7 +237,7 @@ extern void C_Table_define_hash_function(C_Table* t, C_Table_Hash f) {
     rehash(t);
 }
 
-extern void C_Table_define_data_equals(C_Table* t, C_Userdata_Equals f) {
+FMC_API void C_Table_define_data_equals(C_Table* t, C_Userdata_Equals f) {
     if (t == NULL) return;
     if (f == NULL) {
         t->eq = default_equals;
@@ -247,7 +247,7 @@ extern void C_Table_define_data_equals(C_Table* t, C_Userdata_Equals f) {
     rehash(t);
 }
 
-extern void C_Table_define_data_copy(C_Table* t, C_Userdata_Copy f) {
+FMC_API void C_Table_define_data_copy(C_Table* t, C_Userdata_Copy f) {
     if (t == NULL) return;
     if (f == NULL) {
         t->cp = default_copy;
@@ -257,7 +257,7 @@ extern void C_Table_define_data_copy(C_Table* t, C_Userdata_Copy f) {
     rehash(t);
 }
 
-extern void C_Table_define_data_free(C_Table* t, C_Userdata_Free f) {
+FMC_API void C_Table_define_data_free(C_Table* t, C_Userdata_Free f) {
     if (t == NULL) return;
     if (f == NULL) {
         t->rm = default_free;
@@ -332,7 +332,7 @@ static bool update_entry(C_Table* t, C_Table_Entry* entry, const C_Userdata* val
     return true;
 }
 
-extern bool C_Table_add(C_Table* t, const C_Userdata* key, const C_Userdata* value) {
+FMC_API bool C_Table_add(C_Table* t, const C_Userdata* key, const C_Userdata* value) {
     C_Table_Entry* entry;
 
     if (!key || !value) return false;
@@ -345,7 +345,7 @@ extern bool C_Table_add(C_Table* t, const C_Userdata* key, const C_Userdata* val
     return insert_pair(t, key, value);
 }
 
-extern bool C_Table_get(C_Table* t, const C_Userdata* key, C_Userdata* value) {
+FMC_API bool C_Table_get(C_Table* t, const C_Userdata* key, C_Userdata* value) {
     C_Table_Entry* entry;
 
     if (!key || !value) return false;
@@ -358,13 +358,13 @@ extern bool C_Table_get(C_Table* t, const C_Userdata* key, C_Userdata* value) {
     return true;
 }
 
-extern bool C_Table_has(C_Table* t, const C_Userdata* key) {
+FMC_API bool C_Table_has(C_Table* t, const C_Userdata* key) {
     if (!key) return false;
 
     return find_entry(t, key, NULL) != NULL;
 }
 
-extern bool C_Table_put(C_Table* t, const C_Userdata* key, const C_Userdata* value) {
+FMC_API bool C_Table_put(C_Table* t, const C_Userdata* key, const C_Userdata* value) {
     C_Table_Entry* entry;
 
     if (!key || !value) return false;
@@ -377,7 +377,7 @@ extern bool C_Table_put(C_Table* t, const C_Userdata* key, const C_Userdata* val
     return update_entry(t, entry, value);
 }
 
-extern bool C_Table_remove(C_Table* t, const C_Userdata* key) {
+FMC_API bool C_Table_remove(C_Table* t, const C_Userdata* key) {
     C_Table_Entry* entry;
     C_Table_Entry* prev;
 
@@ -412,7 +412,7 @@ struct C_Table_Iterator {
     int             len;
 };
 
-extern void C_Table_new_iterator(C_Table* t, C_Table_Iterator* *iptr) {
+FMC_API void C_Table_new_iterator(C_Table* t, C_Table_Iterator* *iptr) {
     C_Table_Iterator* result;
     C_Table_Entry**   resultarr;
     int               j, jmax;
@@ -449,11 +449,11 @@ extern void C_Table_new_iterator(C_Table* t, C_Table_Iterator* *iptr) {
     *iptr = result;
 }
 
-extern bool C_Table_Iterator_has_next(C_Table_Iterator* i) {
+FMC_API bool C_Table_Iterator_has_next(C_Table_Iterator* i) {
     return i->pos < i->len - 1;
 }
 
-extern void C_Table_Iterator_next(C_Table_Iterator* i) {
+FMC_API void C_Table_Iterator_next(C_Table_Iterator* i) {
     i->pos++;
 }
 
@@ -464,14 +464,14 @@ static C_Table_Entry* get_entry(C_Table_Iterator* i) {
     return NULL;
 }
 
-extern bool C_Table_Iterator_current_key(C_Table_Iterator* i, C_Userdata *key) {
+FMC_API bool C_Table_Iterator_current_key(C_Table_Iterator* i, C_Userdata *key) {
     C_Table_Entry* entry = get_entry(i);
     if (entry == NULL) return false;
     C_Userdata_set(key, entry->key.tag, entry->key.len, entry->key.ptr);
     return true;
 }
 
-extern bool C_Table_Iterator_current_pair(C_Table_Iterator* i, C_Userdata *key, C_Userdata *value) {
+FMC_API bool C_Table_Iterator_current_pair(C_Table_Iterator* i, C_Userdata *key, C_Userdata *value) {
     C_Table_Entry* entry = get_entry(i);
     if (entry == NULL) return false;
     C_Userdata_set(key, entry->key.tag, entry->key.len, entry->key.ptr);
@@ -479,7 +479,7 @@ extern bool C_Table_Iterator_current_pair(C_Table_Iterator* i, C_Userdata *key, 
     return true;
 }
 
-extern bool C_Table_Iterator_free(C_Table_Iterator* *iptr) {
+FMC_API bool C_Table_Iterator_free(C_Table_Iterator* *iptr) {
     if (!(iptr)) return false;
 
     free((*iptr)->entryset);
@@ -491,11 +491,11 @@ extern bool C_Table_Iterator_free(C_Table_Iterator* *iptr) {
 
 /* -------------------- Userdata Functions ------------------------- */
 
-extern bool C_Userdata_is_reference(const C_Userdata* ud) {
+FMC_API bool C_Userdata_is_reference(const C_Userdata* ud) {
     return ud && (ud->len == 0);
 }
 
-extern void C_Userdata_clear(C_Userdata* ud, bool iscopy) {
+FMC_API void C_Userdata_clear(C_Userdata* ud, bool iscopy) {
     if (!ud) return;
 
     if (iscopy && !C_Userdata_is_reference(ud)) {
@@ -504,26 +504,26 @@ extern void C_Userdata_clear(C_Userdata* ud, bool iscopy) {
     bzero(ud, sizeof(C_Userdata));
 }
 
-extern void C_Userdata_set(C_Userdata* ud, tag_t tag, size_t len, const void* ptr) {
+FMC_API void C_Userdata_set(C_Userdata* ud, tag_t tag, size_t len, const void* ptr) {
     if (!ud) return;
     ud->tag = tag;
     ud->len = len;
     ud->ptr = (void*)ptr;
 }
 
-extern void C_Userdata_set_string(C_Userdata* ud, const char* cstring) {
+FMC_API void C_Userdata_set_string(C_Userdata* ud, const char* cstring) {
     ud->tag = DEFAULT_TAG;
     ud->len = strlen(cstring);
     ud->ptr = (void*)cstring;
 }
 
-extern void C_Userdata_set_pointer(C_Userdata* ud, const void* ref) {
+FMC_API void C_Userdata_set_pointer(C_Userdata* ud, const void* ref) {
     ud->tag = DEFAULT_TAG;
     ud->len = 0;
     ud->ptr = (void*)ref;
 }
 
-extern void C_Userdata_set_value(C_Userdata* ud, const void* ptr, size_t len) {
+FMC_API void C_Userdata_set_value(C_Userdata* ud, const void* ptr, size_t len) {
     ud->tag = DEFAULT_TAG;
     ud->len = len;
     ud->ptr = (void*)ptr;

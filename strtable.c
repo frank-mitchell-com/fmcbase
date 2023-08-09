@@ -28,7 +28,7 @@ struct C_String_Table {
     C_Table* t;
 };
 
-extern void C_String_Table_new(C_String_Table* *tptr, size_t minsz) {
+FMC_API void C_String_Table_new(C_String_Table* *tptr, size_t minsz) {
     C_Table* t;
     C_String_Table* self;
 
@@ -51,11 +51,11 @@ extern void C_String_Table_new(C_String_Table* *tptr, size_t minsz) {
     *tptr = self;
 }
 
-extern size_t C_String_Table_size(C_String_Table* t) {
+FMC_API size_t C_String_Table_size(C_String_Table* t) {
     return C_Table_size(t->t);
 }
 
-extern const void* C_String_Table_get(C_String_Table* t, size_t kl, const uint8_t* kp) {
+FMC_API const void* C_String_Table_get(C_String_Table* t, size_t kl, const uint8_t* kp) {
     C_Userdata key, value;
 
     C_Userdata_set_value(&key, kp, kl);
@@ -66,7 +66,7 @@ extern const void* C_String_Table_get(C_String_Table* t, size_t kl, const uint8_
     return value.ptr;
 }
 
-extern bool C_String_Table_has(C_String_Table* t, size_t kl, const uint8_t* kp) {
+FMC_API bool C_String_Table_has(C_String_Table* t, size_t kl, const uint8_t* kp) {
     C_Userdata key;
 
     C_Userdata_set_value(&key, kp, kl);
@@ -74,7 +74,7 @@ extern bool C_String_Table_has(C_String_Table* t, size_t kl, const uint8_t* kp) 
     return C_Table_has(t->t, &key);
 }
 
-extern bool C_String_Table_add(C_String_Table* t, size_t kl, const uint8_t* kp, const void* v) {
+FMC_API bool C_String_Table_add(C_String_Table* t, size_t kl, const uint8_t* kp, const void* v) {
     C_Userdata key, value;
 
     C_Userdata_set_value(&key, kp, kl);
@@ -82,7 +82,7 @@ extern bool C_String_Table_add(C_String_Table* t, size_t kl, const uint8_t* kp, 
     return C_Table_add(t->t, &key, &value);
 }
 
-extern bool C_String_Table_remove(C_String_Table* t, size_t kl, const uint8_t* kp, const void* *oldvalp) {
+FMC_API bool C_String_Table_remove(C_String_Table* t, size_t kl, const uint8_t* kp, const void* *oldvalp) {
     C_Userdata key, value;
 
     C_Userdata_set_value(&key, kp, kl);
@@ -95,7 +95,7 @@ extern bool C_String_Table_remove(C_String_Table* t, size_t kl, const uint8_t* k
     return C_Table_remove(t->t, &key);
 }
 
-void C_String_Table_free(C_String_Table* *tptr) {
+FMC_API void C_String_Table_free(C_String_Table* *tptr) {
     C_Table* t;
     if (!tptr) {
         return;

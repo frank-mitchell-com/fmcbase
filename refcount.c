@@ -111,7 +111,7 @@ static void remove_record(C_Ref_Record* rec) {
 
 /* ---------------------------- API FUNCTIONS ---------------------------- */
 
-extern uint32_t C_Ref_Count_refcount(const void* obj) {
+FMC_API uint32_t C_Ref_Count_refcount(const void* obj) {
     uint32_t result = 1;
     C_Ref_Record* rec = NULL;
 
@@ -140,7 +140,7 @@ extern uint32_t C_Ref_Count_refcount(const void* obj) {
     return result;
 }
 
-extern uint32_t C_Ref_Count_decrement(const void* obj) {
+FMC_API uint32_t C_Ref_Count_decrement(const void* obj) {
     uint32_t result;
     C_Ref_Record* rec = NULL;
     C_On_Zero_Fcn onzero = NULL;
@@ -195,7 +195,7 @@ extern uint32_t C_Ref_Count_decrement(const void* obj) {
     return result;
 }
 
-extern uint32_t C_Ref_Count_increment(const void* obj) {
+FMC_API uint32_t C_Ref_Count_increment(const void* obj) {
     uint32_t result = 0;
     C_Ref_Record* rec = NULL;
 
@@ -231,7 +231,7 @@ extern uint32_t C_Ref_Count_increment(const void* obj) {
     return result;
 }
 
-extern bool C_Ref_Count_is_listed(const void* obj) {
+FMC_API bool C_Ref_Count_is_listed(const void* obj) {
     bool result = false;
 
     LOCK_ACQUIRE(_table_lock);
@@ -243,7 +243,7 @@ extern bool C_Ref_Count_is_listed(const void* obj) {
     return result;
 }
 
-extern void C_Ref_Count_list(const void* obj) {
+FMC_API void C_Ref_Count_list(const void* obj) {
     LOCK_ACQUIRE(_table_lock);
 
     C_Ref_Set_add(reflist(), obj);
@@ -251,7 +251,7 @@ extern void C_Ref_Count_list(const void* obj) {
     LOCK_RELEASE(_table_lock);
 }
 
-extern void C_Ref_Count_delist(const void* obj) {
+FMC_API void C_Ref_Count_delist(const void* obj) {
     C_Ref_Record* rec = NULL;
 
     LOCK_ACQUIRE(_table_lock);
@@ -279,7 +279,7 @@ extern void C_Ref_Count_delist(const void* obj) {
     }
 }
 
-extern void C_Ref_Count_on_zero(const void* p, C_On_Zero_Fcn onzero) {
+FMC_API void C_Ref_Count_on_zero(const void* p, C_On_Zero_Fcn onzero) {
     LOCK_ACQUIRE(_table_lock);
     C_Ref_Table_put(onzerotbl(), p, onzero, NULL);
     LOCK_RELEASE(_table_lock);
@@ -287,7 +287,7 @@ extern void C_Ref_Count_on_zero(const void* p, C_On_Zero_Fcn onzero) {
 
 /* ---------------------------- HELPER FUNCTIONS ---------------------------- */
 
-const void* C_Any_retain(const void* p) {
+FMC_API const void* C_Any_retain(const void* p) {
     if (p == NULL || !C_Ref_Count_is_listed(p)) {
         return NULL;
     }
@@ -295,7 +295,7 @@ const void* C_Any_retain(const void* p) {
     return p;
 }
 
-bool C_Any_release(const void* *pptr) {
+FMC_API bool C_Any_release(const void* *pptr) {
     if (!pptr || !(*pptr) || !C_Ref_Count_is_listed(*pptr)) {
         return false;
     }
@@ -305,7 +305,7 @@ bool C_Any_release(const void* *pptr) {
     return true;
 }
 
-void C_Any_set(const void* *lvalue, const void* value) {
+FMC_API void C_Any_set(const void* *lvalue, const void* value) {
     const void* oldvalue;
     if (!lvalue) {
         return;

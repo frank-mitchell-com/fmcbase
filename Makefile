@@ -43,8 +43,8 @@ $(LIB): $(OBJECTS)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 install: $(LIB) $(SHLIB)
-	install -t $(DESTLIB) $(LIB) $(SHLIB)
-	install -t $(DESTHDR) $(HEADERS)
+	install -p -t $(DESTLIB) $(LIB) $(SHLIB)
+	install -p -t $(DESTHDR) $(HEADERS)
 
 clean:
 	rm -rf $(OBJECTS) $(LIB) $(SHLIB) $(TESTS)

@@ -28,12 +28,33 @@
 #include <sys/types.h>
 #include <wchar.h>
 
+/*
+ * TODO: Adapt for platform endinanness?
+ */
+
+#define ASCII   "US-ASCII"
 #define UTF_8   "UTF-8"
+#define UTF_16  "UTF-16"
 #define UTF_32  "UTF-32"
 
+/**
+ * Type for uncategorized byte data.
+ */
 typedef uint8_t  octet_t;
+
+/**
+ * Type for UTF-8 bytes.
+ */
 typedef uint8_t  utf8_t;
+
+/**
+ * Type for UTF-16 2-byte characters.
+ */
 typedef uint16_t utf16_t;
+
+/**
+ * Type for UTF-32 4-byte characters.
+ */
 typedef wchar_t  utf32_t;
 
 

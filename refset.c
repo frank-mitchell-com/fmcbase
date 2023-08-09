@@ -36,7 +36,7 @@ struct C_Ref_Set {
 };
 
 
-extern void C_Ref_Set_new(C_Ref_Set* *rsptr, size_t minsz) {
+FMC_API void C_Ref_Set_new(C_Ref_Set* *rsptr, size_t minsz) {
     C_Ref_Set* rs;
     if (!rsptr) return;
     (*rsptr) = NULL;
@@ -52,7 +52,7 @@ extern void C_Ref_Set_new(C_Ref_Set* *rsptr, size_t minsz) {
     (*rsptr) = rs;
 }
 
-extern void C_Ref_Set_free(C_Ref_Set* *rsptr) {
+FMC_API void C_Ref_Set_free(C_Ref_Set* *rsptr) {
     C_Ref_Set* rs;
 
     if (!rsptr) return;
@@ -63,7 +63,7 @@ extern void C_Ref_Set_free(C_Ref_Set* *rsptr) {
     rsptr = NULL;
 }
 
-extern size_t C_Ref_Set_size(C_Ref_Set* rs) {
+FMC_API size_t C_Ref_Set_size(C_Ref_Set* rs) {
     return rs->nentries;
 }
 
@@ -152,7 +152,7 @@ static bool insert_entry(C_Ref_Set* rs, const void* p) {
     return true;
 }
 
-extern bool C_Ref_Set_add(C_Ref_Set* rs, const void* p) {
+FMC_API bool C_Ref_Set_add(C_Ref_Set* rs, const void* p) {
     int index = -1;
 
     if (!p) return false;
@@ -165,13 +165,13 @@ extern bool C_Ref_Set_add(C_Ref_Set* rs, const void* p) {
     return false;
 }
 
-extern bool C_Ref_Set_has(C_Ref_Set* rs, const void* p) {
+FMC_API bool C_Ref_Set_has(C_Ref_Set* rs, const void* p) {
     if (!p) return false;
 
     return find_entry(rs, p) >= 0;
 }
 
-extern bool C_Ref_Set_remove(C_Ref_Set* rs, const void* p) {
+FMC_API bool C_Ref_Set_remove(C_Ref_Set* rs, const void* p) {
     int index = -1;
 
     if (!p) return false;
@@ -193,7 +193,7 @@ struct C_Ref_Set_Iterator {
     int64_t    next;
 };
 
-extern void C_Ref_Set_new_iterator(C_Ref_Set* rs, C_Ref_Set_Iterator* *iptr) {
+FMC_API void C_Ref_Set_new_iterator(C_Ref_Set* rs, C_Ref_Set_Iterator* *iptr) {
     C_Ref_Set_Iterator* result;
 
     result = malloc(sizeof(C_Ref_Set_Iterator));
@@ -212,11 +212,11 @@ extern void C_Ref_Set_new_iterator(C_Ref_Set* rs, C_Ref_Set_Iterator* *iptr) {
     *iptr = result;
 }
 
-extern bool C_Ref_Set_Iterator_has_next(C_Ref_Set_Iterator* i) {
+FMC_API bool C_Ref_Set_Iterator_has_next(C_Ref_Set_Iterator* i) {
     return i->next >= 0;
 }
 
-extern void C_Ref_Set_Iterator_next(C_Ref_Set_Iterator* i) {
+FMC_API void C_Ref_Set_Iterator_next(C_Ref_Set_Iterator* i) {
     size_t len = i->rs->arraylen;
     const void** arr = i->rs->array;
 
@@ -233,12 +233,12 @@ extern void C_Ref_Set_Iterator_next(C_Ref_Set_Iterator* i) {
     }
 }
 
-extern const void* C_Ref_Set_Iterator_current(C_Ref_Set_Iterator* i) {
+FMC_API const void* C_Ref_Set_Iterator_current(C_Ref_Set_Iterator* i) {
     if (i->curr < 0 || i->curr >= i->rs->arraylen) return NULL;
     return i->rs->array[i->curr];
 }
 
-extern bool C_Ref_Set_Iterator_free(C_Ref_Set_Iterator* *iptr) {
+FMC_API bool C_Ref_Set_Iterator_free(C_Ref_Set_Iterator* *iptr) {
     if (!(iptr)) return false;
 
     free(*iptr);

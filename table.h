@@ -23,11 +23,9 @@
 #ifndef FMC_TABLE_H_INCLUDED
 #define FMC_TABLE_H_INCLUDED
 
-/** @file */
+#include "common.h"
 
-#include <stddef.h>   /* defines size_t */
-#include <stdbool.h>  /* defines bool */
-#include <stdint.h>   /* defines {,u}intN_t */
+/** @file */
 
 /**
  *
@@ -73,91 +71,91 @@ typedef bool (*C_Userdata_Copy)(C_Userdata* dest, const C_Userdata* src);
 typedef void (*C_Userdata_Free)(C_Userdata* a);
 
 
-void C_Table_new(C_Table* *tptr, size_t minsz);
+FMC_API void C_Table_new(C_Table* *tptr, size_t minsz);
 
 
-size_t C_Table_size(C_Table* t);
+FMC_API size_t C_Table_size(C_Table* t);
 
 
-void C_Table_define_hash_function(C_Table* t, C_Table_Hash);
+FMC_API void C_Table_define_hash_function(C_Table* t, C_Table_Hash);
 
-void C_Table_define_data_equals(C_Table* t, C_Userdata_Equals);
+FMC_API void C_Table_define_data_equals(C_Table* t, C_Userdata_Equals);
 
-void C_Table_define_data_copy(C_Table* t, C_Userdata_Copy);
+FMC_API void C_Table_define_data_copy(C_Table* t, C_Userdata_Copy);
 
-void C_Table_define_data_free(C_Table* t, C_Userdata_Free);
+FMC_API void C_Table_define_data_free(C_Table* t, C_Userdata_Free);
 
 /**
  * Adds a deep copy of `value` into a new entry for `key` if none exists.
  * Returns false and does nothing if an entry for `key` already exists.
  */
-bool C_Table_add(C_Table* t, const C_Userdata* key, const C_Userdata* value);
+FMC_API bool C_Table_add(C_Table* t, const C_Userdata* key, const C_Userdata* value);
 
 /**
  * Get a shallow copy of the entry for `key` into `value`.
  * Returns false if the key was not found.
  */
-bool C_Table_get(C_Table* t, const C_Userdata* key, C_Userdata* value);
+FMC_API bool C_Table_get(C_Table* t, const C_Userdata* key, C_Userdata* value);
 
 /**
  * Whether `t` contains an entry for `key`.
  * Returns false if the key was not found.
  */
-bool C_Table_has(C_Table* t, const C_Userdata* key);
+FMC_API bool C_Table_has(C_Table* t, const C_Userdata* key);
 
 /**
  * Puts a deep copy of `value` into an entry for `key`.
  * Returns false only if the operation could not be completed for some reason.
  */
-bool C_Table_put(C_Table* t, const C_Userdata* key, const C_Userdata* value);
+FMC_API bool C_Table_put(C_Table* t, const C_Userdata* key, const C_Userdata* value);
 
 /**
  * Remove the entry for `key`.
  * Returns false if the operation could not be completed for some reason.
  */
-bool C_Table_remove(C_Table* t, const C_Userdata* key);
+FMC_API bool C_Table_remove(C_Table* t, const C_Userdata* key);
 
 /**
  * Deletes the table and all memory it allocated.
  */
-void C_Table_free(C_Table* *tptr);
+FMC_API void C_Table_free(C_Table* *tptr);
 
 /* -------------------- Iterator Functions ------------------------- */
 
-void C_Table_new_iterator(C_Table* t, C_Table_Iterator* *iptr);
+FMC_API void C_Table_new_iterator(C_Table* t, C_Table_Iterator* *iptr);
 
-bool C_Table_Iterator_has_next(C_Table_Iterator* i);
+FMC_API bool C_Table_Iterator_has_next(C_Table_Iterator* i);
 
-void C_Table_Iterator_next(C_Table_Iterator* i);
+FMC_API void C_Table_Iterator_next(C_Table_Iterator* i);
 
-bool C_Table_Iterator_current_key(C_Table_Iterator* i, C_Userdata *key);
+FMC_API bool C_Table_Iterator_current_key(C_Table_Iterator* i, C_Userdata *key);
 
-bool C_Table_Iterator_current_pair(C_Table_Iterator* i, C_Userdata *key, C_Userdata *val);
+FMC_API bool C_Table_Iterator_current_pair(C_Table_Iterator* i, C_Userdata *key, C_Userdata *val);
 
-bool C_Table_Iterator_free(C_Table_Iterator* *iptr);
+FMC_API bool C_Table_Iterator_free(C_Table_Iterator* *iptr);
 
 /* -------------------- Userdata Functions ------------------------- */
 
-bool C_Userdata_is_reference(const C_Userdata* ud);
+FMC_API bool C_Userdata_is_reference(const C_Userdata* ud);
 
 /** Clears all values of the struct. */
-void C_Userdata_clear(C_Userdata* ud, bool iscopy);
+FMC_API void C_Userdata_clear(C_Userdata* ud, bool iscopy);
 
 /** Sets provided values into struct. */
-void C_Userdata_set(C_Userdata* ud, tag_t tag, size_t len, const void* ptr);
+FMC_API void C_Userdata_set(C_Userdata* ud, tag_t tag, size_t len, const void* ptr);
 
 /** Sets the null-terminated string into the struct. */
-void C_Userdata_set_string(C_Userdata* ud, const char* cstring);
+FMC_API void C_Userdata_set_string(C_Userdata* ud, const char* cstring);
 
 /**
  * Sets the pointer *value* into the struct, without copying.
  */
-void C_Userdata_set_pointer(C_Userdata* ud, const void* ref);
+FMC_API void C_Userdata_set_pointer(C_Userdata* ud, const void* ref);
 
 /** 
  * If len is nonzero, sets the contents of `ptr` into the struct.
  * Otherwise, sets the pointer *value* of `ptr`.
  */
-void C_Userdata_set_value(C_Userdata* ud, const void* ptr, size_t len);
+FMC_API void C_Userdata_set_value(C_Userdata* ud, const void* ptr, size_t len);
 
 #endif // FMC_TABLE_H_INCLUDED

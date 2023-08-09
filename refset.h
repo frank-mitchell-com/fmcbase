@@ -23,10 +23,9 @@
 #ifndef FMC_REFSET_H_INCLUDED
 #define FMC_REFSET_H_INCLUDED
 
-/** @file */
+#include "common.h"
 
-#include <stddef.h>   /* defines size_t */
-#include <stdbool.h>  /* defines bool */
+/** @file */
 
 /**
  *
@@ -41,47 +40,47 @@ typedef struct C_Ref_Set_Iterator C_Ref_Set_Iterator;
 /**
  *
  */
-void C_Ref_Set_new(C_Ref_Set* *tptr, size_t minsz);
+FMC_API void C_Ref_Set_new(C_Ref_Set* *tptr, size_t minsz);
 
 /**
  *
  */
-size_t C_Ref_Set_size(C_Ref_Set* t);
+FMC_API size_t C_Ref_Set_size(C_Ref_Set* t);
 
 /**
  * Adds a deep copy of `value` into a new entry for `key` if none exists.
  * Returns false and does nothing if an entry for `key` already exists.
  */
-bool C_Ref_Set_add(C_Ref_Set* t, const void* key);
+FMC_API bool C_Ref_Set_add(C_Ref_Set* t, const void* key);
 
 /**
  * Whether `t` contains an entry for `key`.
  * Returns false if the key was not found.
  */
-bool C_Ref_Set_has(C_Ref_Set* t, const void* key);
+FMC_API bool C_Ref_Set_has(C_Ref_Set* t, const void* key);
 
 /**
  * Remove the entry for `key`.
  * Returns false if the operation could not be completed for some reason.
  */
-bool C_Ref_Set_remove(C_Ref_Set* t, const void* key);
+FMC_API bool C_Ref_Set_remove(C_Ref_Set* t, const void* key);
 
 /**
  * Deletes the table and all memory it allocated.
  */
-void C_Ref_Set_free(C_Ref_Set* *tptr);
+FMC_API void C_Ref_Set_free(C_Ref_Set* *tptr);
 
 /* -------------------- Iterator Functions ------------------------- */
 
-void C_Ref_Set_new_iterator(C_Ref_Set* t, C_Ref_Set_Iterator* *iptr);
+FMC_API void C_Ref_Set_new_iterator(C_Ref_Set* t, C_Ref_Set_Iterator* *iptr);
 
-bool C_Ref_Set_Iterator_has_next(C_Ref_Set_Iterator* i);
+FMC_API bool C_Ref_Set_Iterator_has_next(C_Ref_Set_Iterator* i);
 
-void C_Ref_Set_Iterator_next(C_Ref_Set_Iterator* i);
+FMC_API void C_Ref_Set_Iterator_next(C_Ref_Set_Iterator* i);
 
-const void* C_Ref_Set_Iterator_current(C_Ref_Set_Iterator* i);
+FMC_API const void* C_Ref_Set_Iterator_current(C_Ref_Set_Iterator* i);
 
-bool C_Ref_Set_Iterator_free(C_Ref_Set_Iterator* *iptr);
+FMC_API bool C_Ref_Set_Iterator_free(C_Ref_Set_Iterator* *iptr);
 
 #endif // FMC_REFSET_H_INCLUDED
 

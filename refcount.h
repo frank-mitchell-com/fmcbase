@@ -23,8 +23,7 @@
 #ifndef FMC_REFCOUNT_H_INCLUDED
 #define FMC_REFCOUNT_H_INCLUDED
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "common.h"
 
 typedef void (*C_On_Zero_Fcn)(void*);
 
@@ -33,61 +32,61 @@ typedef void (*C_On_Zero_Fcn)(void*);
  * If not listed, defaults to 1.
  * This query is thread-safe.
  */
-uint32_t C_Ref_Count_refcount(const void* p);
+FMC_API uint32_t C_Ref_Count_refcount(const void* p);
 
 /**
  * Decrement and return the reference count for `p`.
  * This operation is thread-safe.
  */
-uint32_t C_Ref_Count_decrement(const void* p);
+FMC_API uint32_t C_Ref_Count_decrement(const void* p);
 
 /**
  * Increment and return the reference count for `p`.
  * This operation is thread-safe.
  */
-uint32_t C_Ref_Count_increment(const void* p);
+FMC_API uint32_t C_Ref_Count_increment(const void* p);
 
 /**
  * Whether `p` is listed in the global reference table.
  * This query is thread-safe.
  */
-bool C_Ref_Count_is_listed(const void* p);
+FMC_API bool C_Ref_Count_is_listed(const void* p);
 
 /**
  * Add `p` to the global reference table if not already there.
  * This operation is thread-safe.
  */
-void C_Ref_Count_list(const void* p);
+FMC_API void C_Ref_Count_list(const void* p);
 
 /**
  * Remove `p` from the global reference table.
  * Usually done after deallocating `p`.
  * This operation is thread-safe.
  */
-void C_Ref_Count_delist(const void* p);
+FMC_API void C_Ref_Count_delist(const void* p);
 
 /**
  * Register callback `onzero` for `p` when `p`'s reference count reaches 0.
  * Usually used to free `p`.  Automatically delists `p` before it's called.
  */
-void C_Ref_Count_on_zero(const void* p, C_On_Zero_Fcn onzero);
+FMC_API void C_Ref_Count_on_zero(const void* p, C_On_Zero_Fcn onzero);
 
 /**
  * If `p` is listed, increment its reference count and return it.
  */
-const void* C_Any_retain(const void* p);
+FMC_API const void* C_Any_retain(const void* p);
 
 /**
  * If `*pptr` is listed, decrement its reference count.
  * `*pptr` will be set to NULL.
  * Return whether `*pptr` was listed.
  */
-bool C_Any_release(const void* *pptr);
+FMC_API bool C_Any_release(const void* *pptr);
 
 /**
  * Assign `value` to `lvalue`, adjusting reference counts accordingly.
  */
-void C_Any_set(const void* *lvalue, const void* value);
+FMC_API void C_Any_set(const void* *lvalue, const void* value);
 
 #endif // FMC_REFCOUNT_H_INCLUDED
 

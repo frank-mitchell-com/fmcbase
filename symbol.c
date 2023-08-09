@@ -146,7 +146,7 @@ static C_Symbol* find_symbol(size_t len, const uint8_t* uptr, bool* isnew) {
     return result;
 }
 
-extern bool is_C_Symbol(void* p) {
+FMC_API bool is_C_Symbol(void* p) {
     bool result;
 
     LOCK_ACQUIRE(_lock);
@@ -158,7 +158,7 @@ extern bool is_C_Symbol(void* p) {
     return result;
 }
 
-extern void C_Symbol_new(C_Symbol* *symptr) {
+FMC_API void C_Symbol_new(C_Symbol* *symptr) {
     C_Symbol* sym;
 
     if (!symptr) return;
@@ -172,11 +172,11 @@ extern void C_Symbol_new(C_Symbol* *symptr) {
     (*symptr) = sym;
 }
 
-extern bool C_Symbol_for_cstring(C_Symbol* *symptr, const char* cstr) {
+FMC_API bool C_Symbol_for_cstring(C_Symbol* *symptr, const char* cstr) {
     return C_Symbol_for_utf8_string(symptr, strlen(cstr), (const uint8_t*) cstr);
 }
 
-extern bool C_Symbol_for_utf8_string(C_Symbol* *symptr, size_t len, const uint8_t* uptr) {
+FMC_API bool C_Symbol_for_utf8_string(C_Symbol* *symptr, size_t len, const uint8_t* uptr) {
     C_Symbol *sym;
     bool result = false;
 
@@ -193,7 +193,7 @@ extern bool C_Symbol_for_utf8_string(C_Symbol* *symptr, size_t len, const uint8_
     return result;
 }
 
-extern int C_Symbol_references(C_Symbol* sym) {
+FMC_API int C_Symbol_references(C_Symbol* sym) {
     int refcnt;
 
     if (!sym || !is_C_Symbol(sym)) return -255;
@@ -206,7 +206,7 @@ extern int C_Symbol_references(C_Symbol* sym) {
     return refcnt;
 }
 
-extern C_Symbol* C_Symbol_retain(C_Symbol* sym) {
+FMC_API C_Symbol* C_Symbol_retain(C_Symbol* sym) {
     if (!sym || !is_C_Symbol(sym)) return sym;
 
     C_Ref_Count_increment(sym);
@@ -214,7 +214,7 @@ extern C_Symbol* C_Symbol_retain(C_Symbol* sym) {
     return sym;
 }
 
-extern void C_Symbol_release(C_Symbol* *symptr) {
+FMC_API void C_Symbol_release(C_Symbol* *symptr) {
     C_Symbol* sym;
     uint32_t refcnt;
 
@@ -237,7 +237,7 @@ extern void C_Symbol_release(C_Symbol* *symptr) {
     (*symptr) = NULL;
 }
 
-extern void C_Symbol_set(C_Symbol* *lvalptr, C_Symbol* val) {
+FMC_API void C_Symbol_set(C_Symbol* *lvalptr, C_Symbol* val) {
     if (lvalptr) {
         C_Symbol* oldval = (*lvalptr);
 
@@ -246,7 +246,7 @@ extern void C_Symbol_set(C_Symbol* *lvalptr, C_Symbol* val) {
     }
 }
 
-extern const uint8_t* C_Symbol_as_utf8_string(C_Symbol* sym, size_t *lenptr) {
+FMC_API const uint8_t* C_Symbol_as_utf8_string(C_Symbol* sym, size_t *lenptr) {
     if (!sym || !is_C_Symbol(sym)) return NULL;
     if (lenptr) {
         (*lenptr) = sym->strlen;
@@ -259,7 +259,7 @@ extern const uint8_t* C_Symbol_as_utf8_string(C_Symbol* sym, size_t *lenptr) {
     }
 }
 
-extern ssize_t C_Symbol_as_cstring(C_Symbol* sym, size_t len, char* buf) {
+FMC_API ssize_t C_Symbol_as_cstring(C_Symbol* sym, size_t len, char* buf) {
     ssize_t result;
 
     if (!sym || !is_C_Symbol(sym)) return -1;

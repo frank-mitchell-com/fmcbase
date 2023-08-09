@@ -34,7 +34,7 @@
 
 #define MAX(a, b)   (((a) > (b)) ? (a) : (b))
 
-extern bool C_Conv_is_ascii(size_t sz, const char* buf) {
+FMC_API bool C_Conv_is_ascii(size_t sz, const char* buf) {
      for (int i = 0; i < sz; i++) {
          if (buf[i] < 0 || buf[i] > 127) {
              return false;
@@ -43,7 +43,7 @@ extern bool C_Conv_is_ascii(size_t sz, const char* buf) {
      return true;
 }
 
-extern unsigned int C_Conv_min_bytes(size_t sz, const utf32_t* buf) {
+FMC_API unsigned int C_Conv_min_bytes(size_t sz, const utf32_t* buf) {
     unsigned int result = sz > 0 ? 1 : 0;
     for (int i = 0; i < sz; i++) {
         utf32_t cp = buf[i];
@@ -61,7 +61,7 @@ extern unsigned int C_Conv_min_bytes(size_t sz, const utf32_t* buf) {
     return result;
 }
 
-extern unsigned int C_Conv_min_bytes_utf16(size_t sz, const utf16_t* buf) {
+FMC_API unsigned int C_Conv_min_bytes_utf16(size_t sz, const utf16_t* buf) {
     unsigned int result = sz > 0 ? 1 : 0;
     for (int i = 0; i < sz; i++) {
         utf16_t cp = buf[i];
@@ -80,7 +80,7 @@ extern unsigned int C_Conv_min_bytes_utf16(size_t sz, const utf16_t* buf) {
     return result;
 }
 
-extern unsigned int C_Conv_min_bytes_utf8(size_t sz, const utf8_t* buf) {
+FMC_API unsigned int C_Conv_min_bytes_utf8(size_t sz, const utf8_t* buf) {
     unsigned int result = sz > 0 ? 1 : 0;
     for (int i = 0; i < sz; i++) {
         if (buf[i] >= 0xF0) {
@@ -112,7 +112,7 @@ static inline bool is_surrogate(utf16_t v) {
     return v >= 0xD800 && v <= 0xDFFF;
 }
 
-extern size_t C_Conv_utf8_to_16_length(size_t sz, const utf8_t* buf, size_t *csz) {
+FMC_API size_t C_Conv_utf8_to_16_length(size_t sz, const utf8_t* buf, size_t *csz) {
     int i, result = 0;
     for (i = 0; i < sz; i++) {
         uint32_t c = OCTET(buf[i]);
@@ -130,7 +130,7 @@ extern size_t C_Conv_utf8_to_16_length(size_t sz, const utf8_t* buf, size_t *csz
     return result;
 }
 
-extern size_t C_Conv_utf8_to_32_length(size_t sz, const utf8_t* buf, size_t *csz) {
+FMC_API size_t C_Conv_utf8_to_32_length(size_t sz, const utf8_t* buf, size_t *csz) {
     int i, result = 0;
     for (i = 0; i < sz; i++) {
         uint32_t c = OCTET(buf[i]);
@@ -145,7 +145,7 @@ extern size_t C_Conv_utf8_to_32_length(size_t sz, const utf8_t* buf, size_t *csz
     return result;
 }
 
-extern size_t C_Conv_utf16_to_8_length(size_t sz, const utf16_t* buf, size_t *csz) {
+FMC_API size_t C_Conv_utf16_to_8_length(size_t sz, const utf16_t* buf, size_t *csz) {
     int i, result = 0;
     for (i = 0; i < sz; i++) {
         utf32_t c = buf[i];
@@ -165,7 +165,7 @@ extern size_t C_Conv_utf16_to_8_length(size_t sz, const utf16_t* buf, size_t *cs
     return result;
 }
 
-extern size_t C_Conv_utf32_to_8_length(size_t sz, const utf32_t* buf, size_t *csz) {
+FMC_API size_t C_Conv_utf32_to_8_length(size_t sz, const utf32_t* buf, size_t *csz) {
     int i, result = 0;
     for (i = 0; i < sz; i++) {
         utf32_t c = buf[i];
@@ -293,7 +293,7 @@ static int write_utf8(utf32_t cp, size_t outsz, utf8_t* outbuf, size_t j) {
     return 0;
 }
 
-extern size_t C_Conv_utf8_to_32(size_t insz, const utf8_t* inbuf, size_t outsz, utf32_t* outbuf) {
+FMC_API size_t C_Conv_utf8_to_32(size_t insz, const utf8_t* inbuf, size_t outsz, utf32_t* outbuf) {
     size_t i = 0;
     size_t j;
     for (j = 0; i < insz && j < outsz; j++) {
@@ -358,7 +358,7 @@ static int write_utf16(utf32_t cp, size_t outsz, utf16_t* outbuf, size_t j) {
     }
 }
 
-extern size_t C_Conv_utf8_to_16(size_t insz, const utf8_t* inbuf, size_t outsz, utf16_t* outbuf) {
+FMC_API size_t C_Conv_utf8_to_16(size_t insz, const utf8_t* inbuf, size_t outsz, utf16_t* outbuf) {
     int i = 0;
     int j = 0;
     while (i < insz && j < outsz) {
@@ -380,7 +380,7 @@ extern size_t C_Conv_utf8_to_16(size_t insz, const utf8_t* inbuf, size_t outsz, 
     return j;
 }
 
-extern size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz, utf8_t* outbuf) {
+FMC_API size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz, utf8_t* outbuf) {
     int i = 0;
     int j = 0;
     while (i < insz && j < outsz) {
@@ -402,7 +402,7 @@ extern size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz,
     return j;
 }
 
-extern size_t C_Conv_utf32_to_16(size_t insz, const utf32_t* inbuf, size_t outsz, utf16_t* outbuf) {
+FMC_API size_t C_Conv_utf32_to_16(size_t insz, const utf32_t* inbuf, size_t outsz, utf16_t* outbuf) {
     int j = 0;
     for (int i = 0; i < insz && j < outsz; i++) {
         int incj = write_utf16(inbuf[i], outsz, outbuf, j);
@@ -415,7 +415,7 @@ extern size_t C_Conv_utf32_to_16(size_t insz, const utf32_t* inbuf, size_t outsz
     return j;
 }
 
-extern size_t C_Conv_utf16_to_32(size_t insz, const utf16_t* inbuf, size_t outsz, utf32_t* outbuf) {
+FMC_API size_t C_Conv_utf16_to_32(size_t insz, const utf16_t* inbuf, size_t outsz, utf32_t* outbuf) {
     int i = 0;
     int j = 0;
     for (j = 0; i < insz && j < outsz; j++) {
@@ -432,7 +432,7 @@ extern size_t C_Conv_utf16_to_32(size_t insz, const utf16_t* inbuf, size_t outsz
     return j;
 }
 
-extern size_t C_Conv_utf32_to_8(size_t insz, const utf32_t* inbuf, size_t outsz, utf8_t* outbuf) {
+FMC_API size_t C_Conv_utf32_to_8(size_t insz, const utf32_t* inbuf, size_t outsz, utf8_t* outbuf) {
     size_t i;
     size_t j = 0;
     for (i = 0; i < insz && j < outsz; i++) {
@@ -448,7 +448,7 @@ extern size_t C_Conv_utf32_to_8(size_t insz, const utf32_t* inbuf, size_t outsz,
 
 /* ----------------------- GENERAL CONVERSION ----------------------------*/
 
-extern ssize_t C_Conv_transcode(const char* incode, const char* outcode, size_t insz, octet_t* inbuf, size_t outsz, octet_t* outbuf, ssize_t* nreadp) {
+FMC_API ssize_t C_Conv_transcode(const char* incode, const char* outcode, size_t insz, octet_t* inbuf, size_t outsz, octet_t* outbuf, ssize_t* nreadp) {
     iconv_t cd;
     char tocode[101];
     octet_t* inbufp = inbuf;

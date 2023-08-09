@@ -23,11 +23,9 @@
 #ifndef FMC_REFTABLE_H_INCLUDED
 #define FMC_REFTABLE_H_INCLUDED
 
-/** @file */
+#include "common.h"
 
-#include <stddef.h>   /* defines size_t */
-#include <stdbool.h>  /* defines bool */
-#include <stdint.h>   /* defines {,u}intN_t */
+/** @file */
 
 /**
  * An opaque type for a mapping from C strings to void pointers.
@@ -45,25 +43,25 @@ typedef struct C_Ref_Table_Iterator C_Ref_Table_Iterator;
 /**
  * Creates a new string table with at least `minsz` capacity.
  */
-void C_Ref_Table_new(C_Ref_Table* *tptr, size_t minsz);
+FMC_API void C_Ref_Table_new(C_Ref_Table* *tptr, size_t minsz);
 
 /**
  * The number of entries in `t`.
  */
-size_t C_Ref_Table_size(C_Ref_Table* t);
+FMC_API size_t C_Ref_Table_size(C_Ref_Table* t);
 
 /**
  * Return the pointer value for `key`, or NULL if none found.
  * If `key` is null, this always returns NULL, since a key cannot be null.
  */
-const void* C_Ref_Table_get(C_Ref_Table* t, const void* key);
+FMC_API const void* C_Ref_Table_get(C_Ref_Table* t, const void* key);
 
 /**
  * Whether `t` contains an entry for `key`.
  * If `key` is null, this always returns false, since a key cannot be null.
  * Returns false if the key was not found.
  */
-bool C_Ref_Table_has(C_Ref_Table* t, const void* key);
+FMC_API bool C_Ref_Table_has(C_Ref_Table* t, const void* key);
 
 /**
  * Put `value` into an entry for `key`.
@@ -72,19 +70,19 @@ bool C_Ref_Table_has(C_Ref_Table* t, const void* key);
  * The previous value if any is placed in `*oldvalp` if given.
  * Returns false only if the operation could not be completed for some reason.
  */
-bool C_Ref_Table_put(C_Ref_Table* t, const void* key, const void* value, const void* *oldvalp);
+FMC_API bool C_Ref_Table_put(C_Ref_Table* t, const void* key, const void* value, const void* *oldvalp);
 
 /**
  * Remove the entry for `key`.
  * The previous value if any is placed in `*oldvalp` if given.
  * Returns false if the operation could not be completed for some reason.
  */
-bool C_Ref_Table_remove(C_Ref_Table* t, const void* key, const void* *oldvalp);
+FMC_API bool C_Ref_Table_remove(C_Ref_Table* t, const void* key, const void* *oldvalp);
 
 /**
  * Deletes the table and all memory it allocated.
  */
-void C_Ref_Table_free(C_Ref_Table* *tptr);
+FMC_API void C_Ref_Table_free(C_Ref_Table* *tptr);
 
 #endif // FMC_REFTABLE_H_INCLUDED
 

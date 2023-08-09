@@ -23,11 +23,9 @@
 #ifndef FMC_STRTABLE_H_INCLUDED
 #define FMC_STRTABLE_H_INCLUDED
 
-/** @file */
+#include "common.h"
 
-#include <stddef.h>   /* defines size_t */
-#include <stdbool.h>  /* defines bool */
-#include <stdint.h>   /* defines {,u}intN_t */
+/** @file */
 
 /**
  * An opaque type for a mapping from C strings to void pointers.
@@ -45,25 +43,25 @@ typedef struct C_String_Table_Iterator C_String_Table_Iterator;
 /**
  * Creates a new string table with at least `minsz` capacity.
  */
-void C_String_Table_new(C_String_Table* *tptr, size_t minsz);
+FMC_API void C_String_Table_new(C_String_Table* *tptr, size_t minsz);
 
 /**
  * The number of entries in `t`.
  */
-size_t C_String_Table_size(C_String_Table* t);
+FMC_API size_t C_String_Table_size(C_String_Table* t);
 
 /**
  * Return the pointer value for `key`, or NULL if none found.
  * If `key` is null, this always returns NULL, since a key cannot be null.
  */
-const void* C_String_Table_get(C_String_Table* t, size_t keylen, const uint8_t* key);
+FMC_API const void* C_String_Table_get(C_String_Table* t, size_t keylen, const uint8_t* key);
 
 /**
  * Whether `t` contains an entry for `key`.
  * If `key` is null, this always returns false, since a key cannot be null.
  * Returns false if the key was not found.
  */
-bool C_String_Table_has(C_String_Table* t, size_t keylen, const uint8_t* key);
+FMC_API bool C_String_Table_has(C_String_Table* t, size_t keylen, const uint8_t* key);
 
 /**
  * Add `value` as an entry for `key`, if none exists.
@@ -71,19 +69,19 @@ bool C_String_Table_has(C_String_Table* t, size_t keylen, const uint8_t* key);
  * If `key` already exists in the table, this fucntion fails and returns false.
  * Returns false only if the operation could not be completed.
  */
-bool C_String_Table_add(C_String_Table* t, size_t keylen, const uint8_t* key, const void* value);
+FMC_API bool C_String_Table_add(C_String_Table* t, size_t keylen, const uint8_t* key, const void* value);
 
 /**
  * Remove the entry for `key`.
  * The previous value if any is placed in `*oldvalp` if given.
  * Returns false if the operation could not be completed for some reason.
  */
-bool C_String_Table_remove(C_String_Table* t, size_t keylen, const uint8_t* key, const void* *oldvalp);
+FMC_API bool C_String_Table_remove(C_String_Table* t, size_t keylen, const uint8_t* key, const void* *oldvalp);
 
 /**
  * Deletes the table and all memory it allocated.
  */
-void C_String_Table_free(C_String_Table* *tptr);
+FMC_API void C_String_Table_free(C_String_Table* *tptr);
 
 
 #endif // FMC_STRTABLE_H_INCLUDED
