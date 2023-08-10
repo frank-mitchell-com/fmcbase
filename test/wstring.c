@@ -205,6 +205,7 @@ static void string_from_utf8() {
             lok(U_String_to_utf32(s, 0, STRBUFSIZ, buffer));
             lsequal(wcs2cstr(EXPECT[i].expect), wcs2cstr(buffer));
         }
+        lok(U_String_release(&s));
     }
 
     free_strings();
@@ -227,6 +228,7 @@ static void string_from_utf16() {
             lok(U_String_to_utf32(s, 0, STRBUFSIZ, buffer));
             lsequal(wcs2cstr(EXPECT[i].expect), wcs2cstr(buffer));
         }
+        lok(U_String_release(&s));
     }
 
     free_strings();
@@ -249,6 +251,7 @@ static void string_from_utf32() {
             lok(U_String_to_utf32(s, 0, STRBUFSIZ, buffer));
             lsequal(wcs2cstr(EXPECT[i].expect), wcs2cstr(buffer));
         }
+        lok(U_String_release(&s));
     }
 
     free_strings();
@@ -272,6 +275,7 @@ static void string_from_charset() {
             lok(U_String_to_utf32(s, 0, STRBUFSIZ, buffer));
             lsequal(wcs2cstr(EXPECT[i].expect), wcs2cstr(buffer));
         }
+        lok(U_String_release(&s));
     }
 
     free_strings();
@@ -294,6 +298,7 @@ static void string_to_utf8() {
             lok(U_String_to_utf8(s, 0, STRBUFSIZ, buffer));
             lsequal(wcs2utf8(EXPECT[i].expect), (const char*)buffer);
         }
+        lok(U_String_release(&s));
     }
 
     free_strings();
@@ -316,14 +321,13 @@ static void string_to_charset() {
             lok(U_String_to_charset(s, UTF_8, 0, STRBUFSIZ, buffer));
             lsequal(wcs2utf8(EXPECT[i].expect), (const char*)buffer);
         }
+        lok(U_String_release(&s));
     }
 
     free_strings();
 }
 
 /*
-USTR_API void U_String_set_allocator(u_string_alloc a, void *data);
-
 USTR_API bool U_String_new_ascii(U_String* *sp, size_t sz, const char* buf);
 
 USTR_API size_t U_String_each(U_String* s, void* data, u_iterator f);

@@ -25,14 +25,10 @@
 - `C_Table`
    - collision metrics
 
-- `C_Symbol`
-   - use onzero callback to delete (or not)
-
 - `U_String`
    - nearly all functions
    - "compressed" strings of 1-byte and 2-byte characters.
    - "small" strings of 0 or 1 character (`wchar_t`)
-   - use onzero callback to delete
 
 - `U_Char_Buffer`
    - all functions

@@ -75,6 +75,32 @@ static void refcnt_count() {
     free(tobj);
 }
 
+static void refcnt_list() {
+    char* tobj = strdup("this is only a test");
+    uint32_t result = 0;
+
+    C_Ref_Count_list(tobj);
+    lequal(1, C_Ref_Count_refcount(tobj));
+    lok(C_Ref_Count_is_listed(tobj));
+
+    result = C_Ref_Count_increment(tobj);
+    lequal(2, result);
+
+    C_Ref_Count_list(tobj);
+    lequal(2, C_Ref_Count_refcount(tobj));
+    lok(C_Ref_Count_is_listed(tobj));
+
+    C_Ref_Count_delist(tobj);
+    lequal(1, C_Ref_Count_refcount(tobj));
+    lequal(false, C_Ref_Count_is_listed(tobj));
+
+    C_Ref_Count_delist(tobj);
+    lequal(1, C_Ref_Count_refcount(tobj));
+    lequal(false, C_Ref_Count_is_listed(tobj));
+
+    free(tobj);
+}
+
 static void refcnt_retain() {
     char* tobj  = strdup("this is only a test");
     const void* tobj2 = NULL;
@@ -131,8 +157,9 @@ static void refcnt_onzero() {
 
 int main (int argc, char* argv[]) {
     lrun("refcnt_count", refcnt_count);
-    lrun("refcnt_retain", refcnt_retain);
+    lrun("refcnt_list", refcnt_count);
     lrun("refcnt_onzero", refcnt_onzero);
+    lrun("refcnt_retain", refcnt_retain);
     lresults();
     return lfails != 0;
 }

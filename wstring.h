@@ -36,35 +36,7 @@ typedef struct _U_String U_String;
  * until iteration ends.
  * If the function returns false, iteration ends.
  */
-typedef bool (*u_iterator)(void* data, size_t i, wchar_t c);
-
-/**
- * Prototype for an allocator that substitutes for `malloc()`, `calloc()`, 
- * `realloc()`, and `free()`:
- * - `(?, NULL, 1, s>0)`   => `malloc(s)`
- * - `(?, NULL, n>1, s>0)` => `calloc(n, s)`
- * - `(?, p,    n>0, s>0)` => `realloc(p, n * s)` / `reallocarray(p, n, s)`
- * - `(?, p,    0, 0)      => `free(p)`
- * The first argument is the same one passed ssize_to `U_String_set_allocator`.
- * Other permutations are undefined.
- *
- * New or additional memory returned should be set to 0, just like `calloc()`.
- *
- * The implementor is free to make other inferences, such as that a size
- * greater than wchar_t is the string object, while multiples of 4 bytes or
- * less implies an array of wide chars or chars.
- */
-typedef void* (*u_string_alloc)(void* data, void *p, size_t nmemb, size_t size);
-
-/**
- * Set a new allocator for string object.  Existing strings will remain valid.
- * Code will pass `data` to all invocations of `a`.
- * If `local` is true, this allocator will only be used in the current thread;
- * if false, all String instances in the current memory space will uses the
- * allocator.
- */
-FMC_API void U_String_set_allocator(u_string_alloc a, void *data);
-
+typedef bool (*wchar_iterator)(void* data, size_t i, wchar_t c);
 
 /**
  * Create an ASCII string at `sp` with size `sz` characters in `buf`.
@@ -140,12 +112,12 @@ FMC_API ssize_t U_String_to_charset(U_String* s, const char* charset, size_t off
 /**
  *
  */
-FMC_API size_t U_String_each(U_String* s, void* data, u_iterator f);
+FMC_API size_t U_String_each(U_String* s, void* data, wchar_iterator f);
 
 /**
  *
  */
-FMC_API size_t U_String_each_after(U_String* s, size_t index, void* data, u_iterator f);
+FMC_API size_t U_String_each_after(U_String* s, size_t index, void* data, wchar_iterator f);
 
 /**
  *

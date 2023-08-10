@@ -85,24 +85,31 @@ static void free_symbol(C_Symbol* sym) {
 }
 
 /*
+ * External version of `free_symbol()` which acquires the lock.
+ */
+static void free_symbol_ext(void* p) {
+    if (!p || !is_C_Symbol(p)) return;
+
+    LOCK_ACQUIRE(_lock);
+
+    free_symbol((C_Symbol*)p);
+
+    LOCK_RELEASE(_lock);
+}
+
+/*
  * Allocate a new symbol and add it to all tables.
  * ASSUMES the CALLER has the LOCK.
  */
 static C_Symbol* symbol_alloc_init(size_t len, const uint8_t* uptr) {
     C_Symbol* result = (C_Symbol*)malloc(sizeof(C_Symbol));
-    if (!result) {
-        free_symbol(result);
-        return NULL;
-    }
+    if (!result) goto error;
 
     bzero(result, sizeof(C_Symbol));
 
     if (uptr) {
         uint8_t* buf = (uint8_t*)calloc(len+1, sizeof(uint8_t));
-        if (!buf) {
-            free_symbol(result);
-            return NULL;
-        }
+        if (!buf) goto error;
 
         // Can't use strdup() because of possible embedded nulls
         // TODO: Does this handle "" properly?
@@ -114,13 +121,19 @@ static C_Symbol* symbol_alloc_init(size_t len, const uint8_t* uptr) {
 
         if (!C_String_Table_add(symbols_by_name(), len, buf, result)) {
             free_symbol(result);
-            return NULL;
+            return (C_Symbol*)C_String_Table_get(symbols_by_name(), len, buf);
         }
     }
     C_Ref_Set_add(symbol_ref_set(), result);
     C_Ref_Count_list(result);
+    if (!result->tenured) {
+        C_Ref_Count_on_zero(result, free_symbol_ext);
+    }
 
     return result;
+error:
+    free_symbol(result);
+    return NULL;
 }
 
 /*
@@ -194,56 +207,19 @@ FMC_API bool C_Symbol_for_utf8_string(C_Symbol* *symptr, size_t len, const uint8
 }
 
 FMC_API int C_Symbol_references(C_Symbol* sym) {
-    int refcnt;
-
-    if (!sym || !is_C_Symbol(sym)) return -255;
-
-    refcnt = C_Ref_Count_refcount(sym);
-
-    if (sym->tenured) {
-        refcnt++;
-    }
-    return refcnt;
+    return (int)C_Ref_Count_refcount(sym);
 }
 
 FMC_API C_Symbol* C_Symbol_retain(C_Symbol* sym) {
-    if (!sym || !is_C_Symbol(sym)) return sym;
-
-    C_Ref_Count_increment(sym);
-
-    return sym;
+    return (C_Symbol*) C_Any_retain(sym);
 }
 
 FMC_API void C_Symbol_release(C_Symbol* *symptr) {
-    C_Symbol* sym;
-    uint32_t refcnt;
-
-    if (!symptr) return;
-    sym = *symptr;
-
-    if (!sym || !is_C_Symbol(sym)) return;
-
-    refcnt = C_Ref_Count_decrement(sym);
-
-    if (!sym->tenured && refcnt == 0) {
-        LOCK_ACQUIRE(_lock);
-
-        C_Ref_Count_delist(sym);
-        free_symbol(sym);
-
-        LOCK_RELEASE(_lock);
-    }
-
-    (*symptr) = NULL;
+    C_Any_release((const void**)symptr);
 }
 
 FMC_API void C_Symbol_set(C_Symbol* *lvalptr, C_Symbol* val) {
-    if (lvalptr) {
-        C_Symbol* oldval = (*lvalptr);
-
-        (*lvalptr) = C_Symbol_retain(val);
-        C_Symbol_release(&oldval);
-    }
+    C_Any_set((const void**)lvalptr, (const void*)val);
 }
 
 FMC_API const uint8_t* C_Symbol_as_utf8_string(C_Symbol* sym, size_t *lenptr) {

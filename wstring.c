@@ -28,52 +28,18 @@
 #include "refcount.h"
 #include "wstring.h"
 
-static void* default_alloc(void* unused, void* p, size_t nmem, size_t sz) {
-    if (p != NULL) {
-        if (nmem == 0 || sz == 0) {
-            free(p);
-            return NULL;
-        } else {
-            return realloc(p, nmem * sz);
-        }
-    }
-    if (nmem > 0 && sz > 0) {
-        return malloc(nmem * sz);
-    }
-    return NULL;
-}
-
-static RWLOCK_DECL(_alloc_lock);
-static volatile u_string_alloc _alloc_func = default_alloc;
-static volatile void*          _alloc_data = NULL;
-
 struct _U_String {
     // Does not change after creation
     size_t    wcs_len;
     wchar_t*  wcs_arr;
 };
 
-// TODO: Implement compressed strings, i.e. use arrays of ussize_t16_t 
-// or ussize_t8_t where the characters fit entirely ssize_to UCS-2 (sans surrogates),
+// TODO: Implement compressed strings, i.e. use arrays of utf16_t 
+// or utf8_t where the characters fit entirely into UCS-2 (sans surrogates),
 // Latin-1, or ASCII.  See Java 9 java.lang.String for inspiration.
 
-static void* ustr_alloc(size_t nm, size_t sz) {
-    void* result;
-    RWLOCK_ACQ_READ(_alloc_lock);
-    result = _alloc_func((void *)_alloc_data, NULL, nm, sz);
-    RWLOCK_RELEASE(_alloc_lock);
-    return result;
-}
-
-static void* ustr_free(void* p) {
-    void* result;
-    RWLOCK_ACQ_READ(_alloc_lock);
-    result = _alloc_func((void *)_alloc_data, p, 0, 0);
-    RWLOCK_RELEASE(_alloc_lock);
-    return result;
-}
-
-static bool make_utf32_string(const char* charset, size_t insz, const octet_t* inbuf, size_t *outszp, wchar_t* *outbufp) {
+static U_String* make_utf32_string(const char* charset, size_t insz, const octet_t* inbuf) {
+    U_String* s;
     ssize_t read, written, offset;
     size_t ulen;
     wchar_t *ubuf;
@@ -89,7 +55,11 @@ static bool make_utf32_string(const char* charset, size_t insz, const octet_t* i
     if (read != insz) goto error;
     
     ulen = written/sizeof(wchar_t);
-    ubuf = ustr_alloc(ulen+1, sizeof(wchar_t));
+
+    s = (U_String *)malloc(sizeof(U_String));
+    if (s == NULL) goto error;
+
+    ubuf = malloc((ulen+1) * sizeof(wchar_t));
     if (!ubuf) goto error;
 
     if (buffer[0] == L'\uFEFF') {
@@ -102,51 +72,33 @@ static bool make_utf32_string(const char* charset, size_t insz, const octet_t* i
     memmove(ubuf, buffer+offset, (ulen-offset) * sizeof(wchar_t));
     ubuf[ulen-offset] = 0;
 
-    (*outszp)  = ulen-offset;
-    (*outbufp) = ubuf;
-    return true;
+    s->wcs_len = ulen-offset;
+    s->wcs_arr = ubuf;
+    return s;
 error:
-    (*outszp)  = 0;
-    (*outbufp) = NULL;
-    return false;
+    if (ubuf) free(ubuf);
+    if (s) free(s);
+    return NULL;
 }
 
-static bool make_string(U_String* *sp, const char* charset, size_t len, size_t csz, const void* buf) {
-    U_String* s = NULL;
-    size_t   ul = 0;
-    wchar_t* ub = NULL;
-
-    if (sp == NULL || charset == NULL || buf == NULL) return false;
-
-    *sp = NULL;
-
-    s = (U_String *)ustr_alloc(1, sizeof(U_String));
-    if (s == NULL) goto error;
-
-    if (!make_utf32_string(charset, len * csz, buf, &ul, &ub)) goto error;
-
-    C_Ref_Count_list(s);
-    s->wcs_len = ul;
-    s->wcs_arr = ub;
-
-    *sp = s;
-    return true;
-error:
-    if (ub) ustr_free(ub);
-    if (s) ustr_free(s);
-    return false;
-}
-
-static void free_string(U_String* s) {
+static void free_string(void* p) {
+    U_String* s = p;
     free(s->wcs_arr);
     free(s);
 }
 
-FMC_API void U_String_set_allocator(u_string_alloc func, void *data) {
-    RWLOCK_ACQ_WRITE(_alloc_lock);
-    _alloc_data = data;
-    _alloc_func = func;
-    RWLOCK_RELEASE(_alloc_lock);
+static bool make_string(U_String* *sp, const char* charset, size_t len, size_t csz, const void* buf) {
+    if (sp == NULL || charset == NULL || buf == NULL) return false;
+
+    *sp = NULL;
+
+    *sp = make_utf32_string(charset, len * csz, buf);
+    if (*sp != NULL) {
+        C_Ref_Count_list(*sp);
+        C_Ref_Count_on_zero(*sp, free_string);
+        return true;
+    }
+    return false;
 }
 
 FMC_API bool U_String_new_ascii(U_String* *sp, size_t sz, const char* buf) {
@@ -212,11 +164,11 @@ FMC_API ssize_t U_String_to_charset(U_String* s, const char* charset, size_t off
                                     NULL);
 }
 
-FMC_API size_t U_String_each(U_String* s, void* data, u_iterator f) {
+FMC_API size_t U_String_each(U_String* s, void* data, wchar_iterator f) {
     return 0;
 }
 
-FMC_API size_t U_String_each_after(U_String* s, size_t index, void* data, u_iterator f) {
+FMC_API size_t U_String_each_after(U_String* s, size_t index, void* data, wchar_iterator f) {
     return 0;
 }
 
@@ -253,13 +205,7 @@ FMC_API U_String* U_String_retain(U_String* s) {
 }
 
 FMC_API bool U_String_release(U_String* *sp) {
-    U_String* s = (sp) ? *sp : NULL;
-    bool result = C_Any_release((const void**)sp);
-    if (result && s && U_String_references(s) == 0) {
-        C_Ref_Count_delist(s);
-        free_string(s);
-    }
-    return result;
+    return C_Any_release((const void**)sp);
 }
 
 FMC_API void U_String_set(U_String* *lvalue, U_String* rvalue) {
