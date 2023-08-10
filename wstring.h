@@ -28,7 +28,7 @@
 /**
  *
  */
-typedef struct _U_String U_String;
+typedef struct _C_Wstring C_Wstring;
 
 /**
  * Prototype for an iterator over all chars s[`i`]==`c` in the string `s`.
@@ -43,28 +43,28 @@ typedef bool (*wchar_iterator)(void* data, size_t i, wchar_t c);
  * Returns false if the characters are not ASCII or UTF-8, or the system 
  * runs out of memory; both imply no string can be created.
  */
-FMC_API bool U_String_new_ascii(U_String* *sp, size_t sz, const char* buf);
+FMC_API bool C_Wstring_new_ascii(C_Wstring* *sp, size_t sz, const char* buf);
 
 /**
  * Create a UTF-8 string at `sp` with size `sz` characters in `buf`.
  * Returns false if the characters are not ASCII or UTF-8, or the system 
  * runs out of memory; both imply no string can be created.
  */
-FMC_API bool U_String_new_utf8(U_String* *sp, size_t sz, const utf8_t* buf);
+FMC_API bool C_Wstring_new_utf8(C_Wstring* *sp, size_t sz, const utf8_t* buf);
 
 /**
  * Create a UTF-16 string at `sp` with size `sz` characters in `buf`.
  * Returns false if the system runs out of memory or the string cannot 
  * be created for other reasons.
  */
-FMC_API bool U_String_new_utf16(U_String* *sp, size_t sz, const utf16_t* buf);
+FMC_API bool C_Wstring_new_utf16(C_Wstring* *sp, size_t sz, const utf16_t* buf);
 
 /**
  * Create a UTF-32 string at `sp` with size `sz` wide characters in `buf`.
  * Returns false if the system runs out of memory or the string cannot 
  * be created for other reasons.
  */
-FMC_API bool U_String_new_utf32(U_String* *sp, size_t sz, const wchar_t* buf);
+FMC_API bool C_Wstring_new_utf32(C_Wstring* *sp, size_t sz, const wchar_t* buf);
 
 /**
  * Create a string at `sp` with the character encoding `enc` 
@@ -72,102 +72,102 @@ FMC_API bool U_String_new_utf32(U_String* *sp, size_t sz, const wchar_t* buf);
  * Returns false if the system runs out of memory or the string cannot 
  * be created for other reasons.
  */
-FMC_API bool U_String_new_encoded(U_String* *sp, const char* charset, size_t sz, const octet_t* buf);
+FMC_API bool C_Wstring_new_encoded(C_Wstring* *sp, const char* charset, size_t sz, const octet_t* buf);
 
 /**
  * Create a string at `sp` from a null-terminated string `cstr`.
  */
-FMC_API bool U_String_new_from_cstring(U_String* *sp, const char* cstr);
+FMC_API bool C_Wstring_new_from_cstring(C_Wstring* *sp, const char* cstr);
 
 /**
  *
  */
-FMC_API wchar_t U_String_char_at(U_String* s, size_t i);
+FMC_API wchar_t C_Wstring_char_at(C_Wstring* s, size_t i);
 
 /**
  *
  */
-FMC_API size_t U_String_length(U_String* s);
+FMC_API size_t C_Wstring_length(C_Wstring* s);
 
 /**
  *
  */
-FMC_API size_t U_String_to_byte(U_String* s, size_t offset, size_t max, octet_t* buf);
+FMC_API size_t C_Wstring_to_byte(C_Wstring* s, size_t offset, size_t max, octet_t* buf);
 
 /**
  *
  */
-FMC_API size_t U_String_to_utf8(U_String* s, size_t offset, size_t max, utf8_t* buf);
+FMC_API size_t C_Wstring_to_utf8(C_Wstring* s, size_t offset, size_t max, utf8_t* buf);
 
 /**
  *
  */
-FMC_API size_t U_String_to_utf32(U_String* s, size_t offset, size_t max, utf32_t* buf);
+FMC_API size_t C_Wstring_to_utf32(C_Wstring* s, size_t offset, size_t max, utf32_t* buf);
 
 /**
  *
  */
-FMC_API ssize_t U_String_to_charset(U_String* s, const char* charset, size_t offset, size_t max, octet_t* buf);
+FMC_API ssize_t C_Wstring_to_charset(C_Wstring* s, const char* charset, size_t offset, size_t max, octet_t* buf);
 
 /**
  *
  */
-FMC_API size_t U_String_each(U_String* s, void* data, wchar_iterator f);
+FMC_API size_t C_Wstring_each(C_Wstring* s, void* data, wchar_iterator f);
 
 /**
  *
  */
-FMC_API size_t U_String_each_after(U_String* s, size_t index, void* data, wchar_iterator f);
+FMC_API size_t C_Wstring_each_after(C_Wstring* s, size_t index, void* data, wchar_iterator f);
 
 /**
  *
  */
-FMC_API bool U_String_slice(U_String* *sp, U_String* s, ssize_t first, ssize_t last);
+FMC_API bool C_Wstring_slice(C_Wstring* *sp, C_Wstring* s, ssize_t first, ssize_t last);
 
 /**
  *
  */
-FMC_API bool U_String_slice_from(U_String* *sp, U_String* s, ssize_t first);
+FMC_API bool C_Wstring_slice_from(C_Wstring* *sp, C_Wstring* s, ssize_t first);
 
 /**
  *
  */
-FMC_API bool U_String_slice_to(U_String* *sp, U_String* s, ssize_t last);
+FMC_API bool C_Wstring_slice_to(C_Wstring* *sp, C_Wstring* s, ssize_t last);
 
 /**
  *
  */
-FMC_API bool U_String_join(U_String* *sp, U_String* head, U_String* tail);
+FMC_API bool C_Wstring_join(C_Wstring* *sp, C_Wstring* head, C_Wstring* tail);
 
 /**
  *
  */
-FMC_API bool U_String_join_n(U_String* *sp, size_t n, ...);
+FMC_API bool C_Wstring_join_n(C_Wstring* *sp, size_t n, ...);
 
 /**
  *
  */
-FMC_API bool U_String_is_live(U_String* s);
+FMC_API bool C_Wstring_is_live(C_Wstring* s);
 
 /**
  *
  */
-FMC_API size_t U_String_references(U_String* s);
+FMC_API size_t C_Wstring_references(C_Wstring* s);
 
 /**
  *
  */
-FMC_API U_String* U_String_retain(U_String* s);
+FMC_API C_Wstring* C_Wstring_retain(C_Wstring* s);
 
 /**
  *
  */
-FMC_API bool U_String_release(U_String* *s);
+FMC_API bool C_Wstring_release(C_Wstring* *s);
 
 /**
  *
  */
-FMC_API void U_String_set(U_String* *lvalue, U_String* rvalue);
+FMC_API void C_Wstring_set(C_Wstring* *lvalue, C_Wstring* rvalue);
 
 #endif // FMC_WSTRING_H_INCLUDED
 

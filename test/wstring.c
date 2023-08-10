@@ -159,32 +159,32 @@ static int free_strings() {
 /* ------------------------------ TESTS ----------------------------- */
 
 static void string_smoke() {
-    U_String* s = NULL;
+    C_Wstring* s = NULL;
     uint8_t outbuf[STRBUFSIZ];
 
-    lok(U_String_new_from_cstring(&s, "alpha"));
+    lok(C_Wstring_new_from_cstring(&s, "alpha"));
     lok(s != NULL);
 
-    lok(U_String_release(&s));
+    lok(C_Wstring_release(&s));
     lok(s == NULL);
 }
 
 static void string_chars() {
-    U_String* s = NULL;
+    C_Wstring* s = NULL;
     const wchar_t* expect = L"alpha";
     int expectsz = wcslen(expect);
     uint8_t outbuf[STRBUFSIZ];
 
-    lok(U_String_new_from_cstring(&s, "alpha"));
+    lok(C_Wstring_new_from_cstring(&s, "alpha"));
     lok(s != NULL);
 
     for (int i = 0; i < expectsz; i++) {
-        lequal((int)expect[i], (int)U_String_char_at(s, i));
+        lequal((int)expect[i], (int)C_Wstring_char_at(s, i));
     }
-    lequal(0, (int)U_String_char_at(s, expectsz));
-    lequal(expectsz, (int)U_String_length(s));
+    lequal(0, (int)C_Wstring_char_at(s, expectsz));
+    lequal(expectsz, (int)C_Wstring_length(s));
 
-    lok(U_String_release(&s));
+    lok(C_Wstring_release(&s));
     lok(s == NULL);
 }
 
@@ -194,18 +194,18 @@ static void string_from_utf8() {
     bzero(buffer, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
-        U_String* s = NULL;
+        C_Wstring* s = NULL;
         const utf8_t* str = wcs2utf8(EXPECT[i].expect);
         int len = strlen(str);
 
-        lok(U_String_new_utf8(&s, len, str));
+        lok(C_Wstring_new_utf8(&s, len, str));
         lok(s != NULL);
 
         if (s) {
-            lok(U_String_to_utf32(s, 0, STRBUFSIZ, buffer));
+            lok(C_Wstring_to_utf32(s, 0, STRBUFSIZ, buffer));
             lsequal(wcs2cstr(EXPECT[i].expect), wcs2cstr(buffer));
         }
-        lok(U_String_release(&s));
+        lok(C_Wstring_release(&s));
     }
 
     free_strings();
@@ -217,18 +217,18 @@ static void string_from_utf16() {
     bzero(buffer, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
-        U_String* s = NULL;
+        C_Wstring* s = NULL;
         const utf16_t* jstr = wcs2utf16(EXPECT[i].expect);
         int jlen = jcslen(jstr);
 
-        lok(U_String_new_utf16(&s, jlen, jstr));
+        lok(C_Wstring_new_utf16(&s, jlen, jstr));
         lok(s != NULL);
 
         if (s) {
-            lok(U_String_to_utf32(s, 0, STRBUFSIZ, buffer));
+            lok(C_Wstring_to_utf32(s, 0, STRBUFSIZ, buffer));
             lsequal(wcs2cstr(EXPECT[i].expect), wcs2cstr(buffer));
         }
-        lok(U_String_release(&s));
+        lok(C_Wstring_release(&s));
     }
 
     free_strings();
@@ -240,18 +240,18 @@ static void string_from_utf32() {
     bzero(buffer, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
-        U_String* s = NULL;
+        C_Wstring* s = NULL;
         const wchar_t* wstr = EXPECT[i].expect;
         int wlen = wcslen(wstr);
 
-        lok(U_String_new_utf32(&s, wlen, wstr));
+        lok(C_Wstring_new_utf32(&s, wlen, wstr));
         lok(s != NULL);
 
         if (s) {
-            lok(U_String_to_utf32(s, 0, STRBUFSIZ, buffer));
+            lok(C_Wstring_to_utf32(s, 0, STRBUFSIZ, buffer));
             lsequal(wcs2cstr(EXPECT[i].expect), wcs2cstr(buffer));
         }
-        lok(U_String_release(&s));
+        lok(C_Wstring_release(&s));
     }
 
     free_strings();
@@ -264,18 +264,18 @@ static void string_from_charset() {
     wmemset(buffer, '!', STRBUFSIZ-1);
 
     for (int i = 0; i < EXPECTSZ; i++) {
-        U_String* s = NULL;
+        C_Wstring* s = NULL;
         const char* cs = EXPECT[i].charset;
         int len = EXPECT[i].len;
 
-        lok(U_String_new_encoded(&s, cs, len, (const octet_t*)EXPECT[i].input));
+        lok(C_Wstring_new_encoded(&s, cs, len, (const octet_t*)EXPECT[i].input));
         lok(s != NULL);
 
         if (s) {
-            lok(U_String_to_utf32(s, 0, STRBUFSIZ, buffer));
+            lok(C_Wstring_to_utf32(s, 0, STRBUFSIZ, buffer));
             lsequal(wcs2cstr(EXPECT[i].expect), wcs2cstr(buffer));
         }
-        lok(U_String_release(&s));
+        lok(C_Wstring_release(&s));
     }
 
     free_strings();
@@ -287,18 +287,18 @@ static void string_to_utf8() {
     bzero(buffer, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
-        U_String* s = NULL;
+        C_Wstring* s = NULL;
         const wchar_t* wstr = EXPECT[i].expect;
         int wlen = wcslen(wstr);
 
-        lok(U_String_new_utf32(&s, wlen, wstr));
+        lok(C_Wstring_new_utf32(&s, wlen, wstr));
         lok(s != NULL);
 
         if (s) {
-            lok(U_String_to_utf8(s, 0, STRBUFSIZ, buffer));
+            lok(C_Wstring_to_utf8(s, 0, STRBUFSIZ, buffer));
             lsequal(wcs2utf8(EXPECT[i].expect), (const char*)buffer);
         }
-        lok(U_String_release(&s));
+        lok(C_Wstring_release(&s));
     }
 
     free_strings();
@@ -310,37 +310,37 @@ static void string_to_charset() {
     bzero(buffer, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
-        U_String* s = NULL;
+        C_Wstring* s = NULL;
         const wchar_t* wstr = EXPECT[i].expect;
         int wlen = wcslen(wstr);
 
-        lok(U_String_new_utf32(&s, wlen, wstr));
+        lok(C_Wstring_new_utf32(&s, wlen, wstr));
         lok(s != NULL);
 
         if (s) {
-            lok(U_String_to_charset(s, UTF_8, 0, STRBUFSIZ, buffer));
+            lok(C_Wstring_to_charset(s, UTF_8, 0, STRBUFSIZ, buffer));
             lsequal(wcs2utf8(EXPECT[i].expect), (const char*)buffer);
         }
-        lok(U_String_release(&s));
+        lok(C_Wstring_release(&s));
     }
 
     free_strings();
 }
 
 /*
-USTR_API bool U_String_new_ascii(U_String* *sp, size_t sz, const char* buf);
+USTR_API bool C_Wstring_new_ascii(C_Wstring* *sp, size_t sz, const char* buf);
 
-USTR_API size_t U_String_each(U_String* s, void* data, u_iterator f);
-USTR_API size_t U_String_each_after(U_String* s, size_t index, void* data, u_iterator f);
+USTR_API size_t C_Wstring_each(C_Wstring* s, void* data, u_iterator f);
+USTR_API size_t C_Wstring_each_after(C_Wstring* s, size_t index, void* data, u_iterator f);
 
-USTR_API bool U_String_slice(U_String* *sp, U_String* s, int first, int last);
-USTR_API bool U_String_slice_from(U_String* *sp, U_String* s, int first);
-USTR_API bool U_String_slice_to(U_String* *sp, U_String* s, int last);
+USTR_API bool C_Wstring_slice(C_Wstring* *sp, C_Wstring* s, int first, int last);
+USTR_API bool C_Wstring_slice_from(C_Wstring* *sp, C_Wstring* s, int first);
+USTR_API bool C_Wstring_slice_to(C_Wstring* *sp, C_Wstring* s, int last);
 
-USTR_API bool U_String_join(U_String* *sp, U_String* head, U_String* tail);
-USTR_API bool U_String_join_n(U_String* *sp, size_t n, ...);
+USTR_API bool C_Wstring_join(C_Wstring* *sp, C_Wstring* head, C_Wstring* tail);
+USTR_API bool C_Wstring_join_n(C_Wstring* *sp, size_t n, ...);
 
-USTR_API U_String* U_String_set(U_String* *lvalue, U_String* rvalue);
+USTR_API C_Wstring* C_Wstring_set(C_Wstring* *lvalue, C_Wstring* rvalue);
 */
 
 int main (int argc, char* argv[]) {

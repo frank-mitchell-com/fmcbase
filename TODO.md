@@ -2,10 +2,9 @@
 
 ## PENDING FINAL DESIGN
 
-- common header
 - `C_Port`
-- `U_Alloc`
-  - customizable allocator in `U_String`
+- `C_Xalloc`
+  - customizable allocator in `C_Wstring`
 
 ## PENDING IMPLEMENTATION
 
@@ -25,16 +24,12 @@
 - `C_Table`
    - collision metrics
 
-- `U_String`
+- `C_Wstring`
    - nearly all functions
    - "compressed" strings of 1-byte and 2-byte characters.
    - "small" strings of 0 or 1 character (`wchar_t`)
 
-- `U_Char_Buffer`
-   - all functions
-   - reference counting (`C_Ref_Count`)
-
-- `U_String_Array`
+- `C_Wchar_Buffer`
    - all functions
    - reference counting (`C_Ref_Count`)
 
@@ -47,19 +42,22 @@
    - custom equal, copy, delete
    - look for memory leaks
 
-- `U_String`
+- `C_Wstring`
    - all functions
-   - conversion to codepoints
 
 ### Robustness
+
+- Error codes in error conditions
+  - Documented
+  - Undocumented
 
 - Proper mutex usage (no deadlocks or corrupted data)
   - Update `C_Ref_Count` simultaneously in multiple threads.
   - Create multiple `C_Symbol`s in multiple threads.
-  - Allocate `U_String`s in multiple threads.
-  - Get the same non-UTF `U_String`'s UTF data in multiple threads.
-  - Thread safety of `U_Char_Buffer`?
-  - Thread safety of `U_String_Array`?
+  - Allocate `C_Wstring`s in multiple threads.
+  - Get the same non-UTF `C_Wstring`'s UTF data in multiple threads.
+  - Thread safety of `C_Wchar_Buffer`?
+  - Thread safety of `C_Wstring_Array`?
 
 ### Performance
 
@@ -74,6 +72,7 @@
     (and `C_Ref_Set` and `C_Ref_Table` and `C_String_Table`)
     to tune the default string and pointer hashing algorithms.
   - Use `getrusage()` to figure out memory usage, esp. of `C_Table`.
+  - Check savings of "compressed strings" and "small strings".
 
 ## COMPILATION
 
