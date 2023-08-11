@@ -41,11 +41,12 @@ typedef struct string_data {
 } string_data;
 
 string_data EXPECT[] = {
+    {  0, "",                   "LATIN1",       L""},
     {  5, "alpha",              "US-ASCII",     L"alpha"},
     {  4, "beta",               "US-ASCII",     L"beta"},
     {  5, "gamma",              "ASCII",        L"gamma"},
     {  5, "delta",              "US-ASCII",     L"delta"},
-    { 15, "verisimilitude",     "US-ASCII",     L"verisimilitude"},
+    { 14, "verisimilitude",     "US-ASCII",     L"verisimilitude"},
     {  6, "tsch\xfc\xdf",       "LATIN1",       L"tschüß"},
     {  4, "\x20\xAC\x00?",      "UCS-2BE",      L"\u20AC?"},
     {  4, "\xAC\x20?\x00",      "UCS-2LE",      L"\u20AC?"},
@@ -266,14 +267,17 @@ static void string_from_charset() {
     for (int i = 0; i < EXPECTSZ; i++) {
         C_Wstring* s = NULL;
         const char* cs = EXPECT[i].charset;
-        int len = EXPECT[i].len;
+        const char* instr = EXPECT[i].input;
+        int inlen = EXPECT[i].len;
+        const wchar_t* expstr = EXPECT[i].expect;
+        int explen = wcslen(expstr);
 
-        lok(C_Wstring_new_encoded(&s, cs, len, (const octet_t*)EXPECT[i].input));
+        lok(C_Wstring_new_encoded(&s, cs, inlen, (const octet_t*)instr));
         lok(s != NULL);
 
         if (s) {
-            lok(C_Wstring_to_utf32(s, 0, STRBUFSIZ, buffer));
-            lsequal(wcs2cstr(EXPECT[i].expect), wcs2cstr(buffer));
+            lequal(explen+1, (int)C_Wstring_to_utf32(s, 0, STRBUFSIZ, buffer));
+            lsequal(wcs2cstr(expstr), wcs2cstr(buffer));
         }
         lok(C_Wstring_release(&s));
     }
@@ -287,16 +291,19 @@ static void string_to_utf8() {
     bzero(buffer, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
-        C_Wstring* s = NULL;
         const wchar_t* wstr = EXPECT[i].expect;
-        int wlen = wcslen(wstr);
+        const int wlen = wcslen(wstr);
+        const utf8_t* expstr = wcs2utf8(wstr);
+        const int explen = strlen(expstr);
+        C_Wstring* s = NULL;
 
         lok(C_Wstring_new_utf32(&s, wlen, wstr));
         lok(s != NULL);
 
         if (s) {
-            lok(C_Wstring_to_utf8(s, 0, STRBUFSIZ, buffer));
-            lsequal(wcs2utf8(EXPECT[i].expect), (const char*)buffer);
+            size_t result = C_Wstring_to_utf8(s, 0, STRBUFSIZ, buffer);
+            lequal(explen + 1, (int) result);
+            lsequal(expstr, (const char*)buffer);
         }
         lok(C_Wstring_release(&s));
     }
@@ -310,16 +317,20 @@ static void string_to_charset() {
     bzero(buffer, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
-        C_Wstring* s = NULL;
         const wchar_t* wstr = EXPECT[i].expect;
-        int wlen = wcslen(wstr);
+        const int wlen = wcslen(wstr);
+        const utf8_t* expstr = wcs2utf8(wstr);
+        const int explen = strlen(expstr);
+        C_Wstring* s = NULL;
 
         lok(C_Wstring_new_utf32(&s, wlen, wstr));
         lok(s != NULL);
 
         if (s) {
-            lok(C_Wstring_to_charset(s, UTF_8, 0, STRBUFSIZ, buffer));
-            lsequal(wcs2utf8(EXPECT[i].expect), (const char*)buffer);
+            size_t result = 
+                    C_Wstring_to_charset(s, UTF_8, 0, STRBUFSIZ, buffer);
+            lequal(explen + 1, (int)result);
+            lsequal(expstr, (const char*)buffer);
         }
         lok(C_Wstring_release(&s));
     }
@@ -339,8 +350,6 @@ USTR_API bool C_Wstring_slice_to(C_Wstring* *sp, C_Wstring* s, int last);
 
 USTR_API bool C_Wstring_join(C_Wstring* *sp, C_Wstring* head, C_Wstring* tail);
 USTR_API bool C_Wstring_join_n(C_Wstring* *sp, size_t n, ...);
-
-USTR_API C_Wstring* C_Wstring_set(C_Wstring* *lvalue, C_Wstring* rvalue);
 */
 
 int main (int argc, char* argv[]) {

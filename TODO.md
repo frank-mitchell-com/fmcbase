@@ -2,9 +2,9 @@
 
 ## PENDING FINAL DESIGN
 
-- `C_Port`
-- `C_Xalloc`
-  - customizable allocator in `C_Wstring`
+- `C_Port`: portable I/O wrapper.
+
+- `C_Xalloc`: customizable allocator in `C_Wstring`.
 
 ## PENDING IMPLEMENTATION
 
@@ -25,9 +25,10 @@
    - collision metrics
 
 - `C_Wstring`
-   - nearly all functions
-   - "compressed" strings of 1-byte and 2-byte characters.
-   - "small" strings of 0 or 1 character (`wchar_t`)
+   - each...
+   - slice...
+        - negative indices
+   - join...
 
 - `C_Wchar_Buffer`
    - all functions
@@ -43,7 +44,11 @@
    - look for memory leaks
 
 - `C_Wstring`
-   - all functions
+   - all unimplemented
+   - new-ascii 
+        - ascii
+        - non-ascii (locale?)
+   - "compressed" strings of 1-byte and 2-byte characters.
 
 ### Robustness
 

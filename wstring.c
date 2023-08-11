@@ -28,11 +28,47 @@
 #include "refcount.h"
 #include "wstring.h"
 
+typedef enum String_Type {
+    STRING_EMPTY = 0,
+    STRING_LATIN_1 = 1,
+    STRING_UCS_2 = 2,
+    STRING_UCS_4 = 3,
+} String_Type;
+
+
 struct _C_Wstring {
     // Does not change after creation
-    size_t    wcs_len;
-    wchar_t*  wcs_arr;
+    String_Type type;
+    uint64_t    hash;
+    union {
+        struct {
+        } empty;
+        struct {
+            size_t    len;
+            octet_t   arr[];
+        } str;
+        struct {
+            size_t    len;
+            utf16_t   arr[];
+        } ucs2;
+        struct {
+            size_t    len;
+            wchar_t   arr[];
+        } wcs;
+    };
 };
+
+static uint64_t hashcode(wchar_t* buf, size_t len) {
+    // Stolen from 
+    // https://stackoverflow.com/questions/8317508/hash-function-for-a-string
+    uint64_t result = 37;
+    const int A = 54059;
+    const int B = 76973;
+    for (int i = 0; i < len; i++) {
+        result = (result * A) ^ (buf[i] * B);
+    }
+    return result;
+}
 
 // TODO: Implement compressed strings, i.e. use arrays of utf16_t 
 // or utf8_t where the characters fit entirely into UCS-2 (sans surrogates),
@@ -41,8 +77,7 @@ struct _C_Wstring {
 static C_Wstring* make_utf32_string(const char* charset, size_t insz, const octet_t* inbuf) {
     C_Wstring* s;
     ssize_t read, written, offset;
-    size_t ulen;
-    wchar_t *ubuf;
+    size_t ulen, usiz;
     size_t bufsz = insz+2;
     wchar_t buffer[bufsz];
 
@@ -54,37 +89,50 @@ static C_Wstring* make_utf32_string(const char* charset, size_t insz, const octe
                                     &read);
     if (read != insz) goto error;
     
-    ulen = written/sizeof(wchar_t);
-
-    s = (C_Wstring *)malloc(sizeof(C_Wstring));
-    if (s == NULL) goto error;
-
-    ubuf = malloc((ulen+1) * sizeof(wchar_t));
-    if (!ubuf) goto error;
-
     if (buffer[0] == L'\uFEFF') {
         offset = 1;
     } else {
         offset = 0;
     }
 
-    bzero(ubuf, ulen+1);
-    memmove(ubuf, buffer+offset, (ulen-offset) * sizeof(wchar_t));
-    ubuf[ulen-offset] = 0;
+    ulen = (written-offset)/sizeof(wchar_t);
+    usiz = sizeof(wchar_t);
 
-    s->wcs_len = ulen-offset;
-    s->wcs_arr = ubuf;
+    // TODO: check if we can encode this string with smaller characters
+
+    s = (C_Wstring *)malloc(sizeof(C_Wstring) + (ulen+1) * usiz);
+    if (s == NULL) goto error;
+
+    s->type = (ulen == 0) ? STRING_EMPTY : STRING_UCS_4;
+
+    s->hash = hashcode(buffer + offset, ulen);
+
+    switch (usiz) {
+        case sizeof(octet_t):
+            memmove(s->str.arr, buffer + offset, ulen * usiz);
+            s->str.arr[ulen] = 0;
+            s->str.len = ulen;
+            break;
+        case sizeof(utf16_t):
+            memmove(s->ucs2.arr, buffer + offset, ulen * usiz);
+            s->ucs2.arr[ulen] = 0;
+            s->ucs2.len = ulen;
+            break;
+        case sizeof(wchar_t):
+            memmove(s->wcs.arr, buffer + offset, ulen * usiz);
+            s->wcs.arr[ulen] = 0;
+            s->wcs.len = ulen;
+            break;
+    }
+
     return s;
 error:
-    if (ubuf) free(ubuf);
     if (s) free(s);
     return NULL;
 }
 
 static void free_string(void* p) {
-    C_Wstring* s = p;
-    free(s->wcs_arr);
-    free(s);
+    free(p);
 }
 
 static bool make_string(C_Wstring* *sp, const char* charset, size_t len, size_t csz, const void* buf) {
@@ -132,36 +180,98 @@ FMC_API bool C_Wstring_new_from_cstring(C_Wstring* *sp, const char* cstr) {
 }
 
 FMC_API wchar_t C_Wstring_char_at(C_Wstring* s, size_t i) {
-    if (i >= s->wcs_len) {
-        return 0;
-    } else {
-        return s->wcs_arr[i];
+    if (i >= C_Wstring_length(s)) {
+        return L'\0';
+    }
+    switch (s->type) {
+        case STRING_LATIN_1:
+            return (wchar_t)s->str.arr[i];
+        case STRING_UCS_2:
+            return (wchar_t)s->ucs2.arr[i];
+        case STRING_UCS_4:
+            return s->wcs.arr[i];
+        default:
+            return L'\0';
     }
 }
 
 FMC_API size_t C_Wstring_length(C_Wstring* s) {
-    return s->wcs_len;
+    switch (s->type) {
+        case STRING_LATIN_1:
+            return s->str.len;
+        case STRING_UCS_2:
+            return s->ucs2.len;
+        case STRING_UCS_4:
+            return s->wcs.len;
+        default:
+            return 0;
+    }
 }
 
 FMC_API size_t C_Wstring_to_utf8(C_Wstring* s, size_t offset, size_t max, utf8_t* buf) {
-    // Need to write the final null byte.
-    return C_Conv_utf32_to_8(s->wcs_len+1, s->wcs_arr, max, buf+offset);
+     switch (s->type) {
+        case STRING_EMPTY:
+            buf[offset] = L'\0';
+            return 1;
+        case STRING_LATIN_1:
+            size_t safesz = (max < s->str.len+1) ? max : s->str.len+1;
+            memcpy(buf+offset, s->str.arr, safesz);
+            return safesz;
+        case STRING_UCS_2:
+            return C_Conv_utf16_to_8(s->ucs2.len+1, s->ucs2.arr, max, buf+offset);
+        case STRING_UCS_4:
+            return C_Conv_utf32_to_8(s->wcs.len+1, s->wcs.arr, max, buf+offset);
+    }
+    return 0;
 }
 
 FMC_API size_t C_Wstring_to_utf32(C_Wstring* s, size_t offset, size_t max, utf32_t* buf) {
     // Need to write the final null byte.
-    size_t safesz = (max < s->wcs_len+1) ? max : s->wcs_len+1;
-    return (size_t)wmemcpy(buf+offset, s->wcs_arr, safesz);
+    if (s->type == STRING_UCS_4) {
+        size_t safesz = (max < s->wcs.len+1) ? max : s->wcs.len+1;
+        wmemcpy(buf+offset, s->wcs.arr, safesz);
+        return safesz;
+    } else {
+        size_t len = C_Wstring_length(s);
+        size_t i;
+        for (i = 0; i < max && i < len+1; i++) {
+            buf[i] = C_Wstring_char_at(s, i);
+        }
+        return i;
+    }
 }
 
 FMC_API ssize_t C_Wstring_to_charset(C_Wstring* s, const char* charset, size_t offset, size_t max, octet_t* buf) {
+    size_t insz;
+    octet_t* inbuf;
+    const char* incs;
+    wchar_t emptybuf[2] = L"\0\0";
+
     // Need to write the final null byte.
-    return C_Conv_transcode(UTF_32, charset, 
-                                    (s->wcs_len+1)*sizeof(wchar_t), 
-                                    (octet_t*)s->wcs_arr, 
-                                    max, 
-                                    buf+offset, 
-                                    NULL);
+    switch (s->type) {
+        case STRING_LATIN_1:
+            incs = ASCII;
+            insz = (s->str.len + 1) * sizeof(octet_t);
+            inbuf = (octet_t*)s->str.arr;
+            break;
+        case STRING_UCS_2:
+            incs = UTF_16;
+            insz = (s->ucs2.len + 1) * sizeof(utf16_t);
+            inbuf = (octet_t*)s->ucs2.arr;
+            break;
+        case STRING_UCS_4:
+            incs = UTF_32;
+            insz = (s->wcs.len + 1) * sizeof(wchar_t);
+            inbuf = (octet_t*)s->wcs.arr;
+            break;
+        default:
+            incs = UTF_32;
+            insz = sizeof(wchar_t);
+            inbuf = (octet_t*)emptybuf;
+            break;
+    }
+
+    return C_Conv_transcode(incs, charset, insz, inbuf, max, buf+offset, NULL);
 }
 
 FMC_API size_t C_Wstring_each(C_Wstring* s, void* data, wchar_iterator f) {

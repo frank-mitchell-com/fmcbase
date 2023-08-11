@@ -3,7 +3,7 @@
 ## What is this?
 
 This is a small library of utility "pseudo-classes": tables, sets, strings,
-reference-counting, and other basic utilities.
+reference counting APIs, and other basic data structures and utilities.
 
 Since I spent a long time working with Objective-C and Java, I think in
 classes, so nearly every module is a set of functions built around a datatype.
@@ -27,6 +27,9 @@ All header files have (incomplete) documentation.  I put documentation there
 instead of source files so that even when distributed as libraries some kind
 of documentation would always be available.
 
+See also the `doc/` directory for a brief overview of the code and my
+coding standards and conventions.
+
 ### Building the Software
 
 If you have GNU make simply run the Makefile:
@@ -36,7 +39,7 @@ make
 ```
 
 The default target builds a static library and runs unit tests.
-As of this writing I've yet to add an "install" target.
+As of this writing I've yet to test the "install" target.
 
 I've only built this on my Linux system so far.  Please let me know (or send
 me a patch!) if you need to modify the code for other systems, e.g. Windows,
