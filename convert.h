@@ -33,7 +33,7 @@ FMC_API bool C_Conv_is_ascii(size_t sz, const char* buf);
 
 /**
  * Determine the minimum number of bytes required to represent all `sz`
- * characters in UTF-16 string `buf`.
+ * characters in UTF-32 string `buf`.
  */
 FMC_API unsigned int C_Conv_min_bytes(size_t sz, const utf32_t* buf);
 

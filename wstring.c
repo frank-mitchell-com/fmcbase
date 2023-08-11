@@ -40,22 +40,23 @@ struct _C_Wstring {
     // Does not change after creation
     String_Type type;
     uint64_t    hash;
-    union {
-        struct {
-        } empty;
-        struct {
+    union _string {
+        struct _string0 {
+            size_t    len;
+        } e;
+        struct _string8 {
             size_t    len;
             octet_t   arr[];
-        } str;
-        struct {
+        } c;
+        struct _string16 {
             size_t    len;
             utf16_t   arr[];
-        } ucs2;
-        struct {
+        } u;
+        struct _string32 {
             size_t    len;
             wchar_t   arr[];
-        } wcs;
-    };
+        } w;
+    } s;
 };
 
 static uint64_t hashcode(wchar_t* buf, size_t len) {
@@ -96,32 +97,39 @@ static C_Wstring* make_utf32_string(const char* charset, size_t insz, const octe
     }
 
     ulen = (written-offset)/sizeof(wchar_t);
-    usiz = sizeof(wchar_t);
-
-    // TODO: check if we can encode this string with smaller characters
+    usiz = C_Conv_min_bytes(ulen, buffer+offset);
 
     s = (C_Wstring *)malloc(sizeof(C_Wstring) + (ulen+1) * usiz);
     if (s == NULL) goto error;
-
-    s->type = (ulen == 0) ? STRING_EMPTY : STRING_UCS_4;
 
     s->hash = hashcode(buffer + offset, ulen);
 
     switch (usiz) {
         case sizeof(octet_t):
-            memmove(s->str.arr, buffer + offset, ulen * usiz);
-            s->str.arr[ulen] = 0;
-            s->str.len = ulen;
+            s->type = STRING_LATIN_1;
+            for (int i = 0; i < ulen; i++) {
+                s->s.c.arr[i] = (octet_t)buffer[offset+i];
+            }
+            s->s.c.arr[ulen] = 0;
+            s->s.c.len = ulen;
             break;
         case sizeof(utf16_t):
-            memmove(s->ucs2.arr, buffer + offset, ulen * usiz);
-            s->ucs2.arr[ulen] = 0;
-            s->ucs2.len = ulen;
+            s->type = STRING_UCS_2;
+            for (int i = 0; i < ulen; i++) {
+                s->s.u.arr[i] = (utf16_t)buffer[offset+i];
+            }
+            s->s.u.arr[ulen] = 0;
+            s->s.u.len = ulen;
             break;
         case sizeof(wchar_t):
-            memmove(s->wcs.arr, buffer + offset, ulen * usiz);
-            s->wcs.arr[ulen] = 0;
-            s->wcs.len = ulen;
+            s->type = STRING_UCS_4;
+            memmove(s->s.w.arr, buffer + offset, ulen * usiz);
+            s->s.w.arr[ulen] = 0;
+            s->s.w.len = ulen;
+            break;
+        default:
+            s->type = STRING_EMPTY;
+            s->s.e.len = 0;
             break;
     }
 
@@ -185,11 +193,11 @@ FMC_API wchar_t C_Wstring_char_at(C_Wstring* s, size_t i) {
     }
     switch (s->type) {
         case STRING_LATIN_1:
-            return (wchar_t)s->str.arr[i];
+            return (wchar_t)s->s.c.arr[i];
         case STRING_UCS_2:
-            return (wchar_t)s->ucs2.arr[i];
+            return (wchar_t)s->s.u.arr[i];
         case STRING_UCS_4:
-            return s->wcs.arr[i];
+            return s->s.w.arr[i];
         default:
             return L'\0';
     }
@@ -198,14 +206,34 @@ FMC_API wchar_t C_Wstring_char_at(C_Wstring* s, size_t i) {
 FMC_API size_t C_Wstring_length(C_Wstring* s) {
     switch (s->type) {
         case STRING_LATIN_1:
-            return s->str.len;
+            return s->s.c.len;
         case STRING_UCS_2:
-            return s->ucs2.len;
+            return s->s.u.len;
         case STRING_UCS_4:
-            return s->wcs.len;
+            return s->s.w.len;
         default:
             return 0;
     }
+}
+
+static size_t latin1_to_8(size_t insz, octet_t* inbuf, size_t outsz, utf8_t* outbuf) {
+    size_t j = 0;
+    for (size_t i = 0; i < insz && j < outsz; i++) {
+        utf32_t cp = inbuf[i];
+
+        if (cp <= 0x7F) {
+            outbuf[j] = cp;
+            j += 1;
+        } else if (j+2 < outsz) {
+            outbuf[j + 0] = (uint8_t) (0xC0 | (0x1F & (cp >> 6)));
+            outbuf[j + 1] = (uint8_t) (0x80 | (0x3F & cp));
+            j += 2;
+        } else {
+            outbuf[j] = 0;
+            j+=2;
+        }
+    }
+    return j;
 }
 
 FMC_API size_t C_Wstring_to_utf8(C_Wstring* s, size_t offset, size_t max, utf8_t* buf) {
@@ -214,13 +242,11 @@ FMC_API size_t C_Wstring_to_utf8(C_Wstring* s, size_t offset, size_t max, utf8_t
             buf[offset] = L'\0';
             return 1;
         case STRING_LATIN_1:
-            size_t safesz = (max < s->str.len+1) ? max : s->str.len+1;
-            memcpy(buf+offset, s->str.arr, safesz);
-            return safesz;
+            return latin1_to_8(s->s.c.len+1, s->s.c.arr, max, buf+offset);
         case STRING_UCS_2:
-            return C_Conv_utf16_to_8(s->ucs2.len+1, s->ucs2.arr, max, buf+offset);
+            return C_Conv_utf16_to_8(s->s.u.len+1, s->s.u.arr, max, buf+offset);
         case STRING_UCS_4:
-            return C_Conv_utf32_to_8(s->wcs.len+1, s->wcs.arr, max, buf+offset);
+            return C_Conv_utf32_to_8(s->s.w.len+1, s->s.w.arr, max, buf+offset);
     }
     return 0;
 }
@@ -228,8 +254,8 @@ FMC_API size_t C_Wstring_to_utf8(C_Wstring* s, size_t offset, size_t max, utf8_t
 FMC_API size_t C_Wstring_to_utf32(C_Wstring* s, size_t offset, size_t max, utf32_t* buf) {
     // Need to write the final null byte.
     if (s->type == STRING_UCS_4) {
-        size_t safesz = (max < s->wcs.len+1) ? max : s->wcs.len+1;
-        wmemcpy(buf+offset, s->wcs.arr, safesz);
+        size_t safesz = (max < s->s.w.len+1) ? max : s->s.w.len+1;
+        wmemcpy(buf+offset, s->s.w.arr, safesz);
         return safesz;
     } else {
         size_t len = C_Wstring_length(s);
@@ -250,19 +276,19 @@ FMC_API ssize_t C_Wstring_to_charset(C_Wstring* s, const char* charset, size_t o
     // Need to write the final null byte.
     switch (s->type) {
         case STRING_LATIN_1:
-            incs = ASCII;
-            insz = (s->str.len + 1) * sizeof(octet_t);
-            inbuf = (octet_t*)s->str.arr;
+            incs = "ISO-8859-1";
+            insz = (s->s.c.len + 1) * sizeof(octet_t);
+            inbuf = (octet_t*)s->s.c.arr;
             break;
         case STRING_UCS_2:
             incs = UTF_16;
-            insz = (s->ucs2.len + 1) * sizeof(utf16_t);
-            inbuf = (octet_t*)s->ucs2.arr;
+            insz = (s->s.u.len + 1) * sizeof(utf16_t);
+            inbuf = (octet_t*)s->s.u.arr;
             break;
         case STRING_UCS_4:
             incs = UTF_32;
-            insz = (s->wcs.len + 1) * sizeof(wchar_t);
-            inbuf = (octet_t*)s->wcs.arr;
+            insz = (s->s.w.len + 1) * sizeof(wchar_t);
+            inbuf = (octet_t*)s->s.w.arr;
             break;
         default:
             incs = UTF_32;
