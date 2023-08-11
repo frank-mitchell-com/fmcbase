@@ -187,6 +187,38 @@ FMC_API bool C_Wstring_new_from_cstring(C_Wstring* *sp, const char* cstr) {
     return C_Wstring_new_ascii(sp, len, cstr);
 }
 
+FMC_API int C_Wstring_compare(C_Wstring* a, C_Wstring* b) {
+    if (a == NULL || b == NULL) {
+        if (a == b) {
+            return 0;
+        } else if (a == NULL) {
+            return -1;
+        } else {
+            return 1;
+        }
+    }
+    if (C_Wstring_length(a) != C_Wstring_length(b)) {
+        return C_Wstring_length(a) - C_Wstring_length(b);
+    }
+    for (size_t i = 0; i < C_Wstring_length(a); i++) {
+        wchar_t ac = C_Wstring_char_at(a, i);
+        wchar_t bc = C_Wstring_char_at(b, i);
+        if (ac != bc) {
+            return ac - bc;
+        }
+    }
+    return 0;
+}
+
+FMC_API bool C_Wstring_equals(C_Wstring* a, C_Wstring* b) {
+    return C_Wstring_compare(a, b) == 0;
+}
+
+FMC_API uint64_t C_Wstring_hashcode(C_Wstring* s) {
+    if (s == NULL) return 0;
+    return s->hash;
+}
+
 FMC_API wchar_t C_Wstring_char_at(C_Wstring* s, size_t i) {
     if (i >= C_Wstring_length(s)) {
         return L'\0';
@@ -298,14 +330,6 @@ FMC_API ssize_t C_Wstring_to_charset(C_Wstring* s, const char* charset, size_t o
     }
 
     return C_Conv_transcode(incs, charset, insz, inbuf, max, buf+offset, NULL);
-}
-
-FMC_API size_t C_Wstring_each(C_Wstring* s, void* data, wchar_iterator f) {
-    return 0;
-}
-
-FMC_API size_t C_Wstring_each_after(C_Wstring* s, size_t index, void* data, wchar_iterator f) {
-    return 0;
 }
 
 FMC_API bool C_Wstring_slice(C_Wstring* *sp, C_Wstring* s, ssize_t first, ssize_t last) {
