@@ -25,7 +25,6 @@
    - collision metrics
 
 - `C_Wstring`
-   - each...
    - slice...
         - negative indices
    - join...
@@ -48,7 +47,6 @@
    - new-ascii 
         - ascii
         - non-ascii (locale?)
-   - "compressed" strings of 1-byte and 2-byte characters.
 
 ### Robustness
 

@@ -160,7 +160,7 @@ static int free_strings() {
 /* ------------------------------ TESTS ----------------------------- */
 
 static void string_smoke() {
-    C_Wstring* s = NULL;
+    const C_Wstring* s = NULL;
     uint8_t outbuf[STRBUFSIZ];
 
     lok(C_Wstring_new_from_cstring(&s, "alpha"));
@@ -171,7 +171,7 @@ static void string_smoke() {
 }
 
 static void string_chars() {
-    C_Wstring* s = NULL;
+    const C_Wstring* s = NULL;
     const wchar_t* expect = L"alpha";
     int expectsz = wcslen(expect);
     uint8_t outbuf[STRBUFSIZ];
@@ -191,7 +191,7 @@ static void string_chars() {
 
 /*
  * TODO: test
-USTR_API bool C_Wstring_new_ascii(C_Wstring* *sp, size_t sz, const char* buf);
+USTR_API bool C_Wstring_new_ascii(const C_Wstring* *sp, size_t sz, const char* buf);
 */
 
 static void string_from_utf8() {
@@ -200,7 +200,7 @@ static void string_from_utf8() {
     bzero(buffer, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
-        C_Wstring* s = NULL;
+        const C_Wstring* s = NULL;
         const utf8_t* str = wcs2utf8(EXPECT[i].expect);
         int len = strlen(str);
 
@@ -224,7 +224,7 @@ static void string_from_utf16() {
     bzero(buffer, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
-        C_Wstring* s = NULL;
+        const C_Wstring* s = NULL;
         const utf16_t* jstr = wcs2utf16(EXPECT[i].expect);
         int jlen = jcslen(jstr);
 
@@ -248,7 +248,7 @@ static void string_from_utf32() {
     bzero(buffer, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
-        C_Wstring* s = NULL;
+        const C_Wstring* s = NULL;
         const wchar_t* wstr = EXPECT[i].expect;
         int wlen = wcslen(wstr);
 
@@ -273,7 +273,7 @@ static void string_from_charset() {
     wmemset(buffer, '!', STRBUFSIZ-1);
 
     for (int i = 0; i < EXPECTSZ; i++) {
-        C_Wstring* s = NULL;
+        const C_Wstring* s = NULL;
         const char* cs = EXPECT[i].charset;
         const char* instr = EXPECT[i].input;
         int inlen = EXPECT[i].len;
@@ -303,7 +303,7 @@ static void string_to_utf8() {
         const int wlen = wcslen(wstr);
         const utf8_t* expstr = wcs2utf8(wstr);
         const int explen = strlen(expstr);
-        C_Wstring* s = NULL;
+        const C_Wstring* s = NULL;
 
         lok(C_Wstring_new_utf32(&s, wlen, wstr));
         lok(s != NULL);
@@ -329,7 +329,7 @@ static void string_to_charset() {
         const int wlen = wcslen(wstr);
         const utf8_t* expstr = wcs2utf8(wstr);
         const int explen = strlen(expstr);
-        C_Wstring* s = NULL;
+        const C_Wstring* s = NULL;
 
         lok(C_Wstring_new_utf32(&s, wlen, wstr));
         lok(s != NULL);
@@ -347,11 +347,11 @@ static void string_to_charset() {
 }
 
 static void string_equals() {
-    C_Wstring* s1a;
-    C_Wstring* s1b;
-    C_Wstring* s2;
-    C_Wstring* s3a;
-    C_Wstring* s3b;
+    const C_Wstring* s1a;
+    const C_Wstring* s1b;
+    const C_Wstring* s2;
+    const C_Wstring* s3a;
+    const C_Wstring* s3b;
 
     lok(C_Wstring_new_from_cstring(&s1a, "test1"));
     lok(C_Wstring_new_from_cstring(&s1b, "test1"));
@@ -383,15 +383,12 @@ static void string_equals() {
 /*
  * TODO: test:
  *
-USTR_API size_t C_Wstring_each(C_Wstring* s, void* data, u_iterator f);
-USTR_API size_t C_Wstring_each_after(C_Wstring* s, size_t index, void* data, u_iterator f);
+USTR_API bool C_Wstring_slice(const C_Wstring* *sp, const C_Wstring* s, int first, int last);
+USTR_API bool C_Wstring_slice_from(const C_Wstring* *sp, const C_Wstring* s, int first);
+USTR_API bool C_Wstring_slice_to(const C_Wstring* *sp, const C_Wstring* s, int last);
 
-USTR_API bool C_Wstring_slice(C_Wstring* *sp, C_Wstring* s, int first, int last);
-USTR_API bool C_Wstring_slice_from(C_Wstring* *sp, C_Wstring* s, int first);
-USTR_API bool C_Wstring_slice_to(C_Wstring* *sp, C_Wstring* s, int last);
-
-USTR_API bool C_Wstring_join(C_Wstring* *sp, C_Wstring* head, C_Wstring* tail);
-USTR_API bool C_Wstring_join_n(C_Wstring* *sp, size_t n, ...);
+USTR_API bool C_Wstring_join(const C_Wstring* *sp, const C_Wstring* head, const C_Wstring* tail);
+USTR_API bool C_Wstring_join_n(const C_Wstring* *sp, size_t n, ...);
 */
 
 int main (int argc, char* argv[]) {

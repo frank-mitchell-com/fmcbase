@@ -20,5 +20,69 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include "refcount.h"
 #include "wcharbuf.h"
+
+
+struct _C_Wchar_Buffer {
+};
+
+FMC_API void C_Wchar_Buffer_new(C_Wchar_Buffer* *newref) {
+}
+
+FMC_API void C_Wchar_Buffer_new_from_string(C_Wchar_Buffer* *newref, C_Wstring* str) {
+}
+
+FMC_API size_t C_Wchar_Buffer_length(C_Wchar_Buffer* self) {
+    return 0;
+}
+
+FMC_API wchar_t C_Wchar_Buffer_get_char(C_Wchar_Buffer* self, int index) {
+    return -1;
+}
+
+FMC_API bool C_Wchar_Buffer_get_slice(C_Wchar_Buffer* self, int first, int last, C_Wstring* *sp) {
+    return false;
+}
+
+FMC_API void C_Wchar_Buffer_append_char(C_Wchar_Buffer* self, wchar_t c) {
+}
+
+FMC_API void C_Wchar_Buffer_append_string(C_Wchar_Buffer* self, C_Wstring* s) {
+}
+
+FMC_API void C_Wchar_Buffer_insert_char(C_Wchar_Buffer* self, int index, wchar_t c) {
+}
+
+FMC_API void C_Wchar_Buffer_insert_string(C_Wchar_Buffer* self, int index, C_Wstring* s) {
+}
+
+FMC_API void C_Wchar_Buffer_set_char(C_Wchar_Buffer* self, int index, wchar_t c) {
+}
+
+FMC_API void C_Wchar_Buffer_set_slice(C_Wchar_Buffer* self, int first, int last, C_Wstring* str) {
+}
+
+FMC_API void C_Wchar_Buffer_set_string(C_Wchar_Buffer* self, int index, C_Wstring* s) {
+}
+
+FMC_API bool C_Wchar_Buffer_to_string(C_Wchar_Buffer* self, C_Wstring* *sp) {
+    return false;
+}
+
+FMC_API bool C_Wchar_Buffer_is_live(const C_Wchar_Buffer* b) {
+    return C_Ref_Count_is_listed(b);
+}
+
+FMC_API C_Wchar_Buffer* C_Wchar_Buffer_retain(const C_Wchar_Buffer* b) {
+    return (C_Wchar_Buffer*)C_Any_retain(b);
+}
+
+FMC_API bool C_Wchar_Buffer_release(const C_Wchar_Buffer* *bptr) {
+    return C_Any_release((const void**)bptr);
+}
+
+FMC_API void C_Wchar_Buffer_set(const C_Wchar_Buffer* *lvalue, const C_Wchar_Buffer* rvalue) {
+    C_Any_set((const void**)lvalue, (const void*)rvalue);
+}
 

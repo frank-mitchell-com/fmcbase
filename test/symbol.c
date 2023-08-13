@@ -29,7 +29,7 @@
 #define STRBUFSIZ   20
 
 static void symbol_new() {
-    C_Symbol* sym;
+    const C_Symbol* sym;
 
     C_Symbol_new(&sym);
     lok(sym != NULL);
@@ -40,8 +40,8 @@ static void symbol_new() {
 }
 
 static void symbol_unique() {
-    C_Symbol* sym1;
-    C_Symbol* sym2;
+    const C_Symbol* sym1;
+    const C_Symbol* sym2;
 
     C_Symbol_new(&sym1);
     lok(sym1 != NULL);
@@ -58,8 +58,8 @@ static void symbol_unique() {
 }
 
 static void symbol_retain() {
-    C_Symbol* sym1;
-    C_Symbol* sym2;
+    const C_Symbol* sym1;
+    const C_Symbol* sym2;
 
     C_Symbol_new(&sym1);
     lok(sym1 != NULL);
@@ -77,8 +77,8 @@ static void symbol_retain() {
 }
 
 static void symbol_set() {
-    C_Symbol* sym1;
-    C_Symbol* sym2;
+    const C_Symbol* sym1;
+    const C_Symbol* sym2;
 
     C_Symbol_new(&sym1);
     lok(sym1 != NULL);
@@ -98,9 +98,9 @@ static void symbol_set() {
 }
 
 static void symbol_set_over() {
-    C_Symbol* sym1;
-    C_Symbol* sym2;
-    C_Symbol* oldsym2;
+    const C_Symbol* sym1;
+    const C_Symbol* sym2;
+    const C_Symbol* oldsym2;
 
     C_Symbol_new(&sym1);
     lok(sym1 != NULL);
@@ -129,7 +129,7 @@ static void symbol_set_over() {
 }
 
 static void symbol_set_itself() {
-    C_Symbol* sym;
+    const C_Symbol* sym;
 
     C_Symbol_new(&sym);
     lok(sym != NULL);
@@ -144,8 +144,8 @@ static void symbol_set_itself() {
 }
 
 static void symbol_for_cstring() {
-    C_Symbol* sym1;
-    C_Symbol* sym2;
+    const C_Symbol* sym1;
+    const C_Symbol* sym2;
     ssize_t length;
     char buffer[STRBUFSIZ];
 
@@ -176,9 +176,9 @@ static void symbol_for_cstring() {
 }
 
 static void symbol_as_cstring() {
-    C_Symbol* strsym;
-    C_Symbol* sym;
-    C_Symbol* notsym;
+    const C_Symbol* strsym;
+    const C_Symbol* sym;
+    const C_Symbol* notsym;
     ssize_t length;
     char buffer[STRBUFSIZ];
 
@@ -211,9 +211,9 @@ static void symbol_as_cstring() {
 }
 
 static void symbol_as_utf8_string() {
-    C_Symbol* strsym;
-    C_Symbol* sym;
-    C_Symbol* notsym;
+    const C_Symbol* strsym;
+    const C_Symbol* sym;
+    const C_Symbol* notsym;
     size_t length;
     const char* actual;
 

@@ -26,7 +26,7 @@
 #include "common.h"
 #include "wstring.h"
 
-typedef struct _C_Wchar_Buffer*  C_Wchar_Buffer;
+typedef struct _C_Wchar_Buffer  C_Wchar_Buffer;
 
 FMC_API void C_Wchar_Buffer_new(C_Wchar_Buffer* *newref);
 
@@ -55,13 +55,13 @@ FMC_API void C_Wchar_Buffer_set_string(C_Wchar_Buffer* self, int index, C_Wstrin
 
 FMC_API bool C_Wchar_Buffer_to_string(C_Wchar_Buffer* self, C_Wstring* *sp);
 
-FMC_API bool C_Wchar_Buffer_is_live(C_Wchar_Buffer* b);
+FMC_API bool C_Wchar_Buffer_is_live(const C_Wchar_Buffer* b);
 
-FMC_API void C_Wchar_Buffer_retain(C_Wchar_Buffer* *bptr);
+FMC_API C_Wchar_Buffer* C_Wchar_Buffer_retain(const C_Wchar_Buffer* b);
 
-FMC_API void C_Wchar_Buffer_release(C_Wchar_Buffer* *bptr);
+FMC_API bool C_Wchar_Buffer_release(const C_Wchar_Buffer* *bptr);
 
-FMC_API void C_Wchar_Buffer_set(C_Wchar_Buffer* *lvalue, C_Wchar_Buffer* rvalue);
+FMC_API void C_Wchar_Buffer_set(const C_Wchar_Buffer* *lvalue, const C_Wchar_Buffer* rvalue);
 
 #endif // FMC_WCHARBUF_H_INCLUDED
 
