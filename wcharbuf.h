@@ -30,36 +30,40 @@ typedef struct _C_Wchar_Buffer  C_Wchar_Buffer;
 
 FMC_API void C_Wchar_Buffer_new(C_Wchar_Buffer* *newref);
 
-FMC_API void C_Wchar_Buffer_new_from_string(C_Wchar_Buffer* *newref, C_Wstring* str);
+FMC_API void C_Wchar_Buffer_new_size(C_Wchar_Buffer* *newref, size_t capacity);
+
+FMC_API void C_Wchar_Buffer_new_from_wcs(C_Wchar_Buffer* *newref, const wchar_t* wcs);
+
+FMC_API void C_Wchar_Buffer_new_from_string(C_Wchar_Buffer* *newref, const C_Wstring* str);
 
 FMC_API size_t C_Wchar_Buffer_length(C_Wchar_Buffer* self);
 
-FMC_API wchar_t C_Wchar_Buffer_get_char(C_Wchar_Buffer* self, int index);
+FMC_API wchar_t C_Wchar_Buffer_char_at(C_Wchar_Buffer* self, ssize_t index);
 
-FMC_API bool C_Wchar_Buffer_get_slice(C_Wchar_Buffer* self, int first, int last, C_Wstring* *sp);
+FMC_API bool C_Wchar_Buffer_slice(C_Wchar_Buffer* self, ssize_t first, ssize_t last, const C_Wstring* *sp);
 
 
 FMC_API void C_Wchar_Buffer_append_char(C_Wchar_Buffer* self, wchar_t c);
 
-FMC_API void C_Wchar_Buffer_append_string(C_Wchar_Buffer* self, C_Wstring* s);
+FMC_API void C_Wchar_Buffer_append_string(C_Wchar_Buffer* self, const C_Wstring* s);
 
-FMC_API void C_Wchar_Buffer_insert_char(C_Wchar_Buffer* self, int index, wchar_t c);
+FMC_API void C_Wchar_Buffer_insert_char(C_Wchar_Buffer* self, ssize_t index, wchar_t c);
 
-FMC_API void C_Wchar_Buffer_insert_string(C_Wchar_Buffer* self, int index, C_Wstring* s);
+FMC_API void C_Wchar_Buffer_insert_string(C_Wchar_Buffer* self, ssize_t index, const C_Wstring* s);
 
-FMC_API void C_Wchar_Buffer_set_char(C_Wchar_Buffer* self, int index, wchar_t c);
+FMC_API void C_Wchar_Buffer_set_char(C_Wchar_Buffer* self, ssize_t index, wchar_t c);
 
-FMC_API void C_Wchar_Buffer_set_slice(C_Wchar_Buffer* self, int first, int last, C_Wstring* str);
+FMC_API void C_Wchar_Buffer_set_slice(C_Wchar_Buffer* self, ssize_t first, ssize_t last, const C_Wstring* str);
 
-FMC_API void C_Wchar_Buffer_set_string(C_Wchar_Buffer* self, int index, C_Wstring* s);
+FMC_API void C_Wchar_Buffer_set_string(C_Wchar_Buffer* self, ssize_t index, const C_Wstring* s);
 
-FMC_API bool C_Wchar_Buffer_to_string(C_Wchar_Buffer* self, C_Wstring* *sp);
+FMC_API bool C_Wchar_Buffer_to_string(C_Wchar_Buffer* self, const C_Wstring* *sp);
 
 FMC_API bool C_Wchar_Buffer_is_live(const C_Wchar_Buffer* b);
 
 FMC_API C_Wchar_Buffer* C_Wchar_Buffer_retain(const C_Wchar_Buffer* b);
 
-FMC_API bool C_Wchar_Buffer_release(const C_Wchar_Buffer* *bptr);
+FMC_API bool C_Wchar_Buffer_release(C_Wchar_Buffer* *bptr);
 
 FMC_API void C_Wchar_Buffer_set(const C_Wchar_Buffer* *lvalue, const C_Wchar_Buffer* rvalue);
 
