@@ -3,7 +3,7 @@
 CC=gcc
 #CC=clang
 
-LIBNAME=ctable
+LIBNAME=fmcbase
 
 SRCDIR=.
 TESTDIR=test
