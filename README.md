@@ -1,4 +1,4 @@
-# `libctable`: A Guide for the Perplexed #
+# `libfmcbase`: A Guide for the Perplexed #
 
 ## What is this?
 
