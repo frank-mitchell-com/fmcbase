@@ -102,16 +102,16 @@ and comparison of keys.
 A container for keys and values used by [Table](#table).
 
 
-#### `C_Wchar_Buffer`
+#### `C_Uchar_Buffer`
 
 *Files:* wcharbuf.[ch]
 
-An automatically resizing character buffer to produce [wstrings](#wstring).
+An automatically resizing character buffer to produce [ustrings](#ustring).
 
 
-#### `C_Wstring` {#wstring}
+#### `C_Ustring` {#ustring}
 
-*Files:* wstring.[ch]
+*Files:* ustring.[ch]
 
 A pseudo-class of immutable strings.  Rather than create a kitchen-sink
 interface like many string implementations, I decided for a minimal interface

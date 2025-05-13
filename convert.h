@@ -35,56 +35,56 @@ FMC_API bool C_Conv_is_ascii(size_t sz, const char* buf);
  * Determine the minimum number of bytes required to represent all `sz`
  * characters in UTF-32 string `buf`.
  */
-FMC_API unsigned int C_Conv_min_bytes(size_t sz, const utf32_t* buf);
+FMC_API unsigned int C_Conv_min_bytes(size_t sz, const char32_t* buf);
 
 /**
  * Determine the minimum number of bytes required to represent all `sz`
  * characters in UTF-16 string `buf`.
  */
-FMC_API unsigned int C_Conv_min_bytes_utf16(size_t sz, const utf16_t* buf);
+FMC_API unsigned int C_Conv_min_bytes_utf16(size_t sz, const char16_t* buf);
 
 /**
  * Determine the minimum number of bytes required to represent all `sz`
  * characters in UTF-8 string `buf`.
  */
-FMC_API unsigned int C_Conv_min_bytes_utf8(size_t sz, const utf8_t* buf);
+FMC_API unsigned int C_Conv_min_bytes_utf8(size_t sz, const char8_t* buf);
 
 /**
  * The length of the resulting string if the first `sz` UTF-8 characters
  * in `buf` were converted to 16-bit characters.
  */
-FMC_API size_t C_Conv_utf8_to_16_length(size_t sz, const utf8_t* buf, size_t *csz);
+FMC_API size_t C_Conv_char8_to_16_length(size_t sz, const char8_t* buf, size_t *csz);
 
 /**
  * The length of the resulting string if the first `sz` UTF-8 characters
  * in `buf` were converted to UTF-32.
  */
-FMC_API size_t C_Conv_utf8_to_32_length(size_t sz, const utf8_t* buf, size_t *csz);
+FMC_API size_t C_Conv_char8_to_32_length(size_t sz, const char8_t* buf, size_t *csz);
 
 /**
  * The length of the resulting string if the first `sz` UTF-16 characters
  * in `buf` were converted to UTF-8.
  */
-FMC_API size_t C_Conv_utf16_to_8_length(size_t sz, const utf16_t* buf, size_t *csz);
+FMC_API size_t C_Conv_char16_to_8_length(size_t sz, const char16_t* buf, size_t *csz);
 
 /**
  * The length of the resulting string if the first `sz` UTF-32 characters
  * in `buf` were converted to UTF-8.
  */
-FMC_API size_t C_Conv_utf32_to_8_length(size_t sz, const utf32_t* buf, size_t *csz);
+FMC_API size_t C_Conv_char32_to_8_length(size_t sz, const char32_t* buf, size_t *csz);
 
 
-FMC_API size_t C_Conv_utf8_to_16(size_t insz, const utf8_t* inbuf, size_t outsz, utf16_t* outbuf);
+FMC_API size_t C_Conv_char8_to_16(size_t insz, const char8_t* inbuf, size_t outsz, char16_t* outbuf);
 
-FMC_API size_t C_Conv_utf8_to_32(size_t insz, const utf8_t* inbuf, size_t outsz, utf32_t* outbuf);
+FMC_API size_t C_Conv_char8_to_32(size_t insz, const char8_t* inbuf, size_t outsz, char32_t* outbuf);
 
-FMC_API size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz, utf8_t* outbuf);
+FMC_API size_t C_Conv_char16_to_8(size_t insz, const char16_t* inbuf, size_t outsz, char8_t* outbuf);
 
-FMC_API size_t C_Conv_utf16_to_32(size_t insz, const utf16_t* inbuf, size_t outsz, utf32_t* outbuf);
+FMC_API size_t C_Conv_char16_to_32(size_t insz, const char16_t* inbuf, size_t outsz, char32_t* outbuf);
 
-FMC_API size_t C_Conv_utf32_to_8(size_t insz, const utf32_t* inbuf, size_t outsz, utf8_t* outbuf);
+FMC_API size_t C_Conv_char32_to_8(size_t insz, const char32_t* inbuf, size_t outsz, char8_t* outbuf);
 
-FMC_API size_t C_Conv_utf32_to_16(size_t insz, const utf32_t* inbuf, size_t outsz, utf16_t* outbuf);
+FMC_API size_t C_Conv_char32_to_16(size_t insz, const char32_t* inbuf, size_t outsz, char16_t* outbuf);
 
 /**
  * Converts `insz` bytes at `inbuf` encoded via character encoding `incode` 

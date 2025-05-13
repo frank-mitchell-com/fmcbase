@@ -24,9 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <wchar.h>
 #include "minctest.h"
-#include "wcharbuf.h"
+#include "ucharbuf.h"
 
 #define STRBUFSIZ   64
 
@@ -63,29 +62,37 @@ static int append_ascii(unsigned int c, char buf[], int j) {
     return len;
 }
 
-static const char* wcs2cstr(const wchar_t* wcs) {
+static size_t ucslen(const char32_t* ucs) {
+    size_t result = 0;
+    while (ucs[result] != 0) {
+        result++;
+    }
+    return result;
+}
+
+static const char* ucs2cstr(const char32_t* ucs) {
     char buf[STRBUFSIZ];
-    size_t wlen = wcslen(wcs);
+    size_t wlen = ucslen(ucs);
     size_t len = 0;
 
     bzero(buf, STRBUFSIZ);
     for (int i = 0; i < wlen; i++) {
-        len = append_ascii(wcs[i], buf, len);
+        len = append_ascii(ucs[i], buf, len);
     }
     return (char*)stralloc(buf, len, sizeof(char));
 }
 
-static const wchar_t* cstr2wcs(const char* s) {
-    wchar_t buf[STRBUFSIZ];
+static const char32_t* cstr2ucs(const char* s) {
+    char32_t buf[STRBUFSIZ];
     size_t len = strlen(s);
     int i;
 
     bzero(buf, STRBUFSIZ);
     for (i = 0; i < len; i++) {
-        buf[i] = (wchar_t)s[i];
+        buf[i] = (char32_t)s[i];
     }
     lequal((int)len, i);
-    return (wchar_t*)stralloc(buf, len, sizeof(wchar_t));
+    return (char32_t*)stralloc(buf, len, sizeof(char32_t));
 }
 
 static int free_strings() {
@@ -107,59 +114,59 @@ static int free_strings() {
 /* ------------------------------ TESTS ----------------------------- */
 
 static void charbuf_smoke() {
-    C_Wchar_Buffer* b = NULL;
-    C_Wchar_Buffer* oldb = NULL;
+    C_Uchar_Buffer* b = NULL;
+    C_Uchar_Buffer* oldb = NULL;
 
-    C_Wchar_Buffer_new(&b);
+    C_Uchar_Buffer_new(&b);
     lok(b != NULL);
-    lequal(0, (int)C_Wchar_Buffer_length(b));
+    lequal(0, (int)C_Uchar_Buffer_length(b));
 
     oldb = b;
-    C_Wchar_Buffer_release(&b);
-    lequal(false, C_Wchar_Buffer_is_live(oldb));
+    C_Uchar_Buffer_release(&b);
+    lequal(false, C_Uchar_Buffer_is_live(oldb));
 }
 
 static void charbuf_chars() {
-    C_Wchar_Buffer* b = NULL;
-    const C_Wstring* s = NULL;
-    const wchar_t* wcs = L"test";
-    const size_t wlen = wcslen(wcs);
+    C_Uchar_Buffer* b = NULL;
+    const C_Ustring* s = NULL;
+    const char32_t* ucs = U"test";
+    const size_t wlen = ucslen(ucs);
 
-    C_Wstring_new_utf32(&s, wlen, wcs);
+    C_Ustring_new_utf32(&s, wlen, ucs);
     lok(s != NULL);
-    C_Wchar_Buffer_new_from_string(&b, s);
+    C_Uchar_Buffer_new_from_string(&b, s);
     lok(b != NULL);
-    lequal((int)wlen, (int)C_Wchar_Buffer_length(b));
+    lequal((int)wlen, (int)C_Uchar_Buffer_length(b));
 
     for (int i = 0; i < wlen; i++) {
-        lequal((int)wcs[i], (int)C_Wchar_Buffer_char_at(b, i));
-        lequal((int)wcs[i], (int)C_Wchar_Buffer_char_at(b, -(wlen-i)));
+        lequal((int)ucs[i], (int)C_Uchar_Buffer_char_at(b, i));
+        lequal((int)ucs[i], (int)C_Uchar_Buffer_char_at(b, -(wlen-i)));
     }
 
-    C_Wstring_release(&s);
-    C_Wchar_Buffer_release(&b);
+    C_Ustring_release(&s);
+    C_Uchar_Buffer_release(&b);
 }
 
-static void charbuf_wcs() {
-    C_Wchar_Buffer* b = NULL;
-    const wchar_t* wcs = L"test";
-    const size_t wlen = wcslen(wcs);
+static void charbuf_ucs() {
+    C_Uchar_Buffer* b = NULL;
+    const char32_t* ucs = U"test";
+    const size_t wlen = ucslen(ucs);
 
-    C_Wchar_Buffer_new_from_wcs(&b, wcs);
+    C_Uchar_Buffer_new_from_ucs(&b, ucs);
     lok(b != NULL);
-    lequal((int)wlen, (int)C_Wchar_Buffer_length(b));
+    lequal((int)wlen, (int)C_Uchar_Buffer_length(b));
 
     for (int i = 0; i < wlen; i++) {
-        lequal((int)wcs[i], (int)C_Wchar_Buffer_char_at(b, i));
+        lequal((int)ucs[i], (int)C_Uchar_Buffer_char_at(b, i));
     }
 
-    C_Wchar_Buffer_release(&b);
+    C_Uchar_Buffer_release(&b);
 }
 
 int main (int argc, char* argv[]) {
     lrun("charbuf_smoke", charbuf_smoke);
     lrun("charbuf_chars", charbuf_chars);
-    lrun("charbuf_wcs", charbuf_wcs);
+    lrun("charbuf_ucs", charbuf_ucs);
     lresults();
     return lfails != 0;
 }

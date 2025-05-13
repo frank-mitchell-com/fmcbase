@@ -26,7 +26,7 @@
 #include "thread.h"
 #include "convert.h"
 #include "refcount.h"
-#include "wstring.h"
+#include "ustring.h"
 
 typedef enum String_Type {
     STRING_EMPTY = 0,
@@ -36,7 +36,7 @@ typedef enum String_Type {
 } String_Type;
 
 
-struct _C_Wstring {
+struct _C_Ustring {
     // Does not change after creation
     String_Type type;
     uint64_t    hash;
@@ -50,16 +50,16 @@ struct _C_Wstring {
         } c;
         struct _string16 {
             size_t    len;
-            utf16_t   arr[];
+            char16_t   arr[];
         } u;
         struct _string32 {
             size_t    len;
-            wchar_t   arr[];
+            char32_t   arr[];
         } w;
     } s;
 };
 
-static uint64_t hashcode(wchar_t* buf, size_t len) {
+static uint64_t hashcode(char32_t* buf, size_t len) {
     // Stolen from 
     // https://stackoverflow.com/questions/8317508/hash-function-for-a-string
     uint64_t result = 37;
@@ -71,21 +71,21 @@ static uint64_t hashcode(wchar_t* buf, size_t len) {
     return result;
 }
 
-// TODO: Implement compressed strings, i.e. use arrays of utf16_t 
-// or utf8_t where the characters fit entirely into UCS-2 (sans surrogates),
+// TODO: Implement compressed strings, i.e. use arrays of char16_t 
+// or char8_t where the characters fit entirely into UCS-2 (sans surrogates),
 // Latin-1, or ASCII.  See Java 9 java.lang.String for inspiration.
 
-static const C_Wstring* make_utf32_string(const char* charset, size_t insz, const octet_t* inbuf) {
-    C_Wstring* s;
+static const C_Ustring* make_utf32_string(const char* charset, size_t insz, const octet_t* inbuf) {
+    C_Ustring* s;
     ssize_t read, written, offset;
     size_t ulen, usiz;
     size_t bufsz = insz+2;
-    wchar_t buffer[bufsz];
+    char32_t buffer[bufsz];
 
     written = C_Conv_transcode(charset, UTF_32, 
                                     insz, 
                                     (octet_t*)inbuf, 
-                                    bufsz * sizeof(wchar_t), 
+                                    bufsz * sizeof(char32_t), 
                                     (octet_t*)buffer, 
                                     &read);
     if (read != insz) goto error;
@@ -96,10 +96,10 @@ static const C_Wstring* make_utf32_string(const char* charset, size_t insz, cons
         offset = 0;
     }
 
-    ulen = (written-offset)/sizeof(wchar_t);
+    ulen = (written-offset)/sizeof(char32_t);
     usiz = C_Conv_min_bytes(ulen, buffer+offset);
 
-    s = (C_Wstring *)malloc(sizeof(C_Wstring) + (ulen+1) * usiz);
+    s = (C_Ustring *)malloc(sizeof(C_Ustring) + (ulen+1) * usiz);
     if (s == NULL) goto error;
 
     s->hash = hashcode(buffer + offset, ulen);
@@ -113,15 +113,15 @@ static const C_Wstring* make_utf32_string(const char* charset, size_t insz, cons
             s->s.c.arr[ulen] = 0;
             s->s.c.len = ulen;
             break;
-        case sizeof(utf16_t):
+        case sizeof(char16_t):
             s->type = STRING_UCS_2;
             for (int i = 0; i < ulen; i++) {
-                s->s.u.arr[i] = (utf16_t)buffer[offset+i];
+                s->s.u.arr[i] = (char16_t)buffer[offset+i];
             }
             s->s.u.arr[ulen] = 0;
             s->s.u.len = ulen;
             break;
-        case sizeof(wchar_t):
+        case sizeof(char32_t):
             s->type = STRING_UCS_4;
             memmove(s->s.w.arr, buffer + offset, ulen * usiz);
             s->s.w.arr[ulen] = 0;
@@ -143,7 +143,7 @@ static void free_string(void* p) {
     free(p);
 }
 
-static bool make_string(const C_Wstring* *sp, const char* charset, size_t len, size_t csz, const void* buf) {
+static bool make_string(const C_Ustring* *sp, const char* charset, size_t len, size_t csz, const void* buf) {
     if (sp == NULL || charset == NULL || buf == NULL) return false;
 
     *sp = NULL;
@@ -157,7 +157,7 @@ static bool make_string(const C_Wstring* *sp, const char* charset, size_t len, s
     return false;
 }
 
-FMC_API bool C_Wstring_new_ascii(const C_Wstring* *sp, size_t sz, const char* buf) {
+FMC_API bool C_Ustring_new_ascii(const C_Ustring* *sp, size_t sz, const char* buf) {
     if (C_Conv_is_ascii(sz, buf)) {
         return make_string(sp, ASCII, sz, sizeof(octet_t), buf);
     } else {
@@ -166,28 +166,28 @@ FMC_API bool C_Wstring_new_ascii(const C_Wstring* *sp, size_t sz, const char* bu
     }
 }
 
-FMC_API bool C_Wstring_new_utf8(const C_Wstring* *sp, size_t sz, const utf8_t* buf) {
-    return make_string(sp, UTF_8, sz, sizeof(utf8_t), buf);
+FMC_API bool C_Ustring_new_utf8(const C_Ustring* *sp, size_t sz, const char8_t* buf) {
+    return make_string(sp, UTF_8, sz, sizeof(char8_t), buf);
 }
 
-FMC_API bool C_Wstring_new_utf16(const C_Wstring* *sp, size_t sz, const utf16_t* buf) {
-    return make_string(sp, UTF_16, sz, sizeof(utf16_t), buf);
+FMC_API bool C_Ustring_new_utf16(const C_Ustring* *sp, size_t sz, const char16_t* buf) {
+    return make_string(sp, UTF_16, sz, sizeof(char16_t), buf);
 }
 
-FMC_API bool C_Wstring_new_utf32(const C_Wstring* *sp, size_t sz, const wchar_t* buf) {
-    return make_string(sp, UTF_32, sz, sizeof(wchar_t), buf);
+FMC_API bool C_Ustring_new_utf32(const C_Ustring* *sp, size_t sz, const char32_t* buf) {
+    return make_string(sp, UTF_32, sz, sizeof(char32_t), buf);
 }
 
-FMC_API bool C_Wstring_new_encoded(const C_Wstring* *sp, const char* charset, size_t sz, const octet_t* buf) {
+FMC_API bool C_Ustring_new_encoded(const C_Ustring* *sp, const char* charset, size_t sz, const octet_t* buf) {
     return make_string(sp, charset, sz, sizeof(octet_t), buf);
 }
 
-FMC_API bool C_Wstring_new_from_cstring(const C_Wstring* *sp, const char* cstr) {
+FMC_API bool C_Ustring_new_from_cstring(const C_Ustring* *sp, const char* cstr) {
     size_t len = strlen(cstr);
-    return C_Wstring_new_ascii(sp, len, cstr);
+    return C_Ustring_new_ascii(sp, len, cstr);
 }
 
-FMC_API int C_Wstring_compare(const C_Wstring* a, const C_Wstring* b) {
+FMC_API int C_Ustring_compare(const C_Ustring* a, const C_Ustring* b) {
     if (a == NULL || b == NULL) {
         if (a == b) {
             return 0;
@@ -197,12 +197,12 @@ FMC_API int C_Wstring_compare(const C_Wstring* a, const C_Wstring* b) {
             return 1;
         }
     }
-    if (C_Wstring_length(a) != C_Wstring_length(b)) {
-        return C_Wstring_length(a) - C_Wstring_length(b);
+    if (C_Ustring_length(a) != C_Ustring_length(b)) {
+        return C_Ustring_length(a) - C_Ustring_length(b);
     }
-    for (size_t i = 0; i < C_Wstring_length(a); i++) {
-        wchar_t ac = C_Wstring_char_at(a, i);
-        wchar_t bc = C_Wstring_char_at(b, i);
+    for (size_t i = 0; i < C_Ustring_length(a); i++) {
+        char32_t ac = C_Ustring_char_at(a, i);
+        char32_t bc = C_Ustring_char_at(b, i);
         if (ac != bc) {
             return ac - bc;
         }
@@ -210,24 +210,24 @@ FMC_API int C_Wstring_compare(const C_Wstring* a, const C_Wstring* b) {
     return 0;
 }
 
-FMC_API bool C_Wstring_equals(const C_Wstring* a, const C_Wstring* b) {
-    return C_Wstring_compare(a, b) == 0;
+FMC_API bool C_Ustring_equals(const C_Ustring* a, const C_Ustring* b) {
+    return C_Ustring_compare(a, b) == 0;
 }
 
-FMC_API uint64_t C_Wstring_hashcode(const C_Wstring* s) {
+FMC_API uint64_t C_Ustring_hashcode(const C_Ustring* s) {
     if (s == NULL) return 0;
     return s->hash;
 }
 
-FMC_API wchar_t C_Wstring_char_at(const C_Wstring* s, size_t i) {
-    if (i >= C_Wstring_length(s)) {
+FMC_API char32_t C_Ustring_char_at(const C_Ustring* s, size_t i) {
+    if (i >= C_Ustring_length(s)) {
         return L'\0';
     }
     switch (s->type) {
         case STRING_LATIN_1:
-            return (wchar_t)s->s.c.arr[i];
+            return (char32_t)s->s.c.arr[i];
         case STRING_UCS_2:
-            return (wchar_t)s->s.u.arr[i];
+            return (char32_t)s->s.u.arr[i];
         case STRING_UCS_4:
             return s->s.w.arr[i];
         default:
@@ -235,7 +235,7 @@ FMC_API wchar_t C_Wstring_char_at(const C_Wstring* s, size_t i) {
     }
 }
 
-FMC_API size_t C_Wstring_length(const C_Wstring* s) {
+FMC_API size_t C_Ustring_length(const C_Ustring* s) {
     switch (s->type) {
         case STRING_LATIN_1:
             return s->s.c.len;
@@ -248,10 +248,10 @@ FMC_API size_t C_Wstring_length(const C_Wstring* s) {
     }
 }
 
-static size_t latin1_to_8(size_t insz, const octet_t* inbuf, size_t outsz, utf8_t* outbuf) {
+static size_t latin1_to_8(size_t insz, const octet_t* inbuf, size_t outsz, char8_t* outbuf) {
     size_t j = 0;
     for (size_t i = 0; i < insz && j < outsz; i++) {
-        utf32_t cp = inbuf[i];
+        char32_t cp = inbuf[i];
 
         if (cp <= 0x7F) {
             outbuf[j] = cp;
@@ -268,7 +268,7 @@ static size_t latin1_to_8(size_t insz, const octet_t* inbuf, size_t outsz, utf8_
     return j;
 }
 
-FMC_API size_t C_Wstring_to_utf8(const C_Wstring* s, size_t offset, size_t max, utf8_t* buf) {
+FMC_API size_t C_Ustring_to_utf8(const C_Ustring* s, size_t offset, size_t max, char8_t* buf) {
      switch (s->type) {
         case STRING_EMPTY:
             buf[offset] = L'\0';
@@ -276,34 +276,34 @@ FMC_API size_t C_Wstring_to_utf8(const C_Wstring* s, size_t offset, size_t max, 
         case STRING_LATIN_1:
             return latin1_to_8(s->s.c.len+1, s->s.c.arr, max, buf+offset);
         case STRING_UCS_2:
-            return C_Conv_utf16_to_8(s->s.u.len+1, s->s.u.arr, max, buf+offset);
+            return C_Conv_char16_to_8(s->s.u.len+1, s->s.u.arr, max, buf+offset);
         case STRING_UCS_4:
-            return C_Conv_utf32_to_8(s->s.w.len+1, s->s.w.arr, max, buf+offset);
+            return C_Conv_char32_to_8(s->s.w.len+1, s->s.w.arr, max, buf+offset);
     }
     return 0;
 }
 
-FMC_API size_t C_Wstring_to_utf32(const C_Wstring* s, size_t offset, size_t max, utf32_t* buf) {
+FMC_API size_t C_Ustring_to_utf32(const C_Ustring* s, size_t offset, size_t max, char32_t* buf) {
     // Need to write the final null byte.
     if (s->type == STRING_UCS_4) {
         size_t safesz = (max < s->s.w.len+1) ? max : s->s.w.len+1;
-        wmemcpy(buf+offset, s->s.w.arr, safesz);
+        memcpy(buf+offset, s->s.w.arr, safesz * sizeof(char32_t));
         return safesz;
     } else {
-        size_t len = C_Wstring_length(s);
+        size_t len = C_Ustring_length(s);
         size_t i;
         for (i = 0; i < max && i < len+1; i++) {
-            buf[i] = C_Wstring_char_at(s, i);
+            buf[i] = C_Ustring_char_at(s, i);
         }
         return i;
     }
 }
 
-FMC_API ssize_t C_Wstring_to_charset(const C_Wstring* s, const char* charset, size_t offset, size_t max, octet_t* buf) {
+FMC_API ssize_t C_Ustring_to_charset(const C_Ustring* s, const char* charset, size_t offset, size_t max, octet_t* buf) {
     size_t insz;
     octet_t* inbuf;
     const char* incs;
-    wchar_t emptybuf[2] = L"\0\0";
+    char32_t emptybuf[2] = U"\0\0";
 
     // Need to write the final null byte.
     switch (s->type) {
@@ -314,17 +314,17 @@ FMC_API ssize_t C_Wstring_to_charset(const C_Wstring* s, const char* charset, si
             break;
         case STRING_UCS_2:
             incs = UTF_16;
-            insz = (s->s.u.len + 1) * sizeof(utf16_t);
+            insz = (s->s.u.len + 1) * sizeof(char16_t);
             inbuf = (octet_t*)s->s.u.arr;
             break;
         case STRING_UCS_4:
             incs = UTF_32;
-            insz = (s->s.w.len + 1) * sizeof(wchar_t);
+            insz = (s->s.w.len + 1) * sizeof(char32_t);
             inbuf = (octet_t*)s->s.w.arr;
             break;
         default:
             incs = UTF_32;
-            insz = sizeof(wchar_t);
+            insz = sizeof(char32_t);
             inbuf = (octet_t*)emptybuf;
             break;
     }
@@ -332,43 +332,43 @@ FMC_API ssize_t C_Wstring_to_charset(const C_Wstring* s, const char* charset, si
     return C_Conv_transcode(incs, charset, insz, inbuf, max, buf+offset, NULL);
 }
 
-FMC_API bool C_Wstring_slice(const C_Wstring* *sp, const C_Wstring* s, ssize_t first, ssize_t last) {
+FMC_API bool C_Ustring_slice(const C_Ustring* *sp, const C_Ustring* s, ssize_t first, ssize_t last) {
     return false;
 }
 
-FMC_API bool C_Wstring_slice_from(const C_Wstring* *sp, const C_Wstring* s, ssize_t first) {
-    return C_Wstring_slice(sp, s, first, -1);
+FMC_API bool C_Ustring_slice_from(const C_Ustring* *sp, const C_Ustring* s, ssize_t first) {
+    return C_Ustring_slice(sp, s, first, -1);
 }
 
-FMC_API bool C_Wstring_slice_to(const C_Wstring* *sp, const C_Wstring* s, ssize_t last) {
-    return C_Wstring_slice(sp, s, 0, last);
+FMC_API bool C_Ustring_slice_to(const C_Ustring* *sp, const C_Ustring* s, ssize_t last) {
+    return C_Ustring_slice(sp, s, 0, last);
 }
 
-FMC_API bool C_Wstring_join(const C_Wstring* *sp, const C_Wstring* head, const C_Wstring* tail) {
+FMC_API bool C_Ustring_join(const C_Ustring* *sp, const C_Ustring* head, const C_Ustring* tail) {
     return false;
 }
 
-FMC_API bool C_Wstring_join_n(const C_Wstring* *sp, size_t n, ...) {
+FMC_API bool C_Ustring_join_n(const C_Ustring* *sp, size_t n, ...) {
     return false;
 }
 
-FMC_API bool C_Wstring_is_live(const C_Wstring* s) {
+FMC_API bool C_Ustring_is_live(const C_Ustring* s) {
     return C_Ref_Count_is_listed(s);
 }
 
-FMC_API size_t C_Wstring_references(const C_Wstring* s) {
+FMC_API size_t C_Ustring_references(const C_Ustring* s) {
     return C_Ref_Count_refcount(s);
 }
 
-FMC_API const C_Wstring* C_Wstring_retain(const C_Wstring* s) {
-    return (const C_Wstring*)C_Any_retain(s);
+FMC_API const C_Ustring* C_Ustring_retain(const C_Ustring* s) {
+    return (const C_Ustring*)C_Any_retain(s);
 }
 
-FMC_API bool C_Wstring_release(const C_Wstring* *sp) {
+FMC_API bool C_Ustring_release(const C_Ustring* *sp) {
     return C_Any_release((const void**)sp);
 }
 
-FMC_API void C_Wstring_set(const C_Wstring* *lvalue, const C_Wstring* rvalue) {
+FMC_API void C_Ustring_set(const C_Ustring* *lvalue, const C_Ustring* rvalue) {
     C_Any_set((const void**)lvalue, (const void*)rvalue);
 }
 

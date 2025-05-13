@@ -45,17 +45,17 @@ typedef uint8_t  octet_t;
 /**
  * Type for UTF-8 bytes.
  */
-typedef uint8_t  utf8_t;
+typedef uint8_t  char8_t;
 
 /**
  * Type for UTF-16 2-byte characters.
  */
-typedef uint16_t utf16_t;
+typedef uint16_t char16_t;
 
 /**
  * Type for UTF-32 4-byte characters.
  */
-typedef wchar_t  utf32_t;
+typedef uint32_t char32_t;
 
 
 /*

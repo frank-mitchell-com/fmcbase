@@ -43,10 +43,10 @@ FMC_API bool C_Conv_is_ascii(size_t sz, const char* buf) {
      return true;
 }
 
-FMC_API unsigned int C_Conv_min_bytes(size_t sz, const utf32_t* buf) {
+FMC_API unsigned int C_Conv_min_bytes(size_t sz, const char32_t* buf) {
     unsigned int result = sz > 0 ? 1 : 0;
     for (int i = 0; i < sz; i++) {
-        utf32_t cp = buf[i];
+        char32_t cp = buf[i];
 
         // TODO: What if cp is in the wrong endian order ...?
         if (cp > 0xFFFF) {
@@ -61,10 +61,10 @@ FMC_API unsigned int C_Conv_min_bytes(size_t sz, const utf32_t* buf) {
     return result;
 }
 
-FMC_API unsigned int C_Conv_min_bytes_utf16(size_t sz, const utf16_t* buf) {
+FMC_API unsigned int C_Conv_min_bytes_utf16(size_t sz, const char16_t* buf) {
     unsigned int result = sz > 0 ? 1 : 0;
     for (int i = 0; i < sz; i++) {
-        utf16_t cp = buf[i];
+        char16_t cp = buf[i];
 
         // TODO: What if cp is in the wrong endian order ...?
         if (cp >= 0xD800 && cp <= 0xDFFF) {
@@ -80,7 +80,7 @@ FMC_API unsigned int C_Conv_min_bytes_utf16(size_t sz, const utf16_t* buf) {
     return result;
 }
 
-FMC_API unsigned int C_Conv_min_bytes_utf8(size_t sz, const utf8_t* buf) {
+FMC_API unsigned int C_Conv_min_bytes_utf8(size_t sz, const char8_t* buf) {
     unsigned int result = sz > 0 ? 1 : 0;
     for (int i = 0; i < sz; i++) {
         if (buf[i] >= 0xF0) {
@@ -100,19 +100,19 @@ FMC_API unsigned int C_Conv_min_bytes_utf8(size_t sz, const utf8_t* buf) {
 
 /* ---------------------- Buffer Size Helpers --------------------------- */
 
-static inline bool is_high_surrogate(utf16_t v) {
+static inline bool is_high_surrogate(char16_t v) {
     return v >= 0xD800 && v <= 0xDBFF;
 }
 
-static inline bool is_low_surrogate(utf16_t v) {
+static inline bool is_low_surrogate(char16_t v) {
     return v >= 0xDC00 && v <= 0xDFFF;
 }
 
-static inline bool is_surrogate(utf16_t v) {
+static inline bool is_surrogate(char16_t v) {
     return v >= 0xD800 && v <= 0xDFFF;
 }
 
-FMC_API size_t C_Conv_utf8_to_16_length(size_t sz, const utf8_t* buf, size_t *csz) {
+FMC_API size_t C_Conv_char8_to_16_length(size_t sz, const char8_t* buf, size_t *csz) {
     int i, result = 0;
     for (i = 0; i < sz; i++) {
         uint32_t c = OCTET(buf[i]);
@@ -130,7 +130,7 @@ FMC_API size_t C_Conv_utf8_to_16_length(size_t sz, const utf8_t* buf, size_t *cs
     return result;
 }
 
-FMC_API size_t C_Conv_utf8_to_32_length(size_t sz, const utf8_t* buf, size_t *csz) {
+FMC_API size_t C_Conv_char8_to_32_length(size_t sz, const char8_t* buf, size_t *csz) {
     int i, result = 0;
     for (i = 0; i < sz; i++) {
         uint32_t c = OCTET(buf[i]);
@@ -145,10 +145,10 @@ FMC_API size_t C_Conv_utf8_to_32_length(size_t sz, const utf8_t* buf, size_t *cs
     return result;
 }
 
-FMC_API size_t C_Conv_utf16_to_8_length(size_t sz, const utf16_t* buf, size_t *csz) {
+FMC_API size_t C_Conv_char16_to_8_length(size_t sz, const char16_t* buf, size_t *csz) {
     int i, result = 0;
     for (i = 0; i < sz; i++) {
-        utf32_t c = buf[i];
+        char32_t c = buf[i];
         if (c <= 0x7f) {
             result += 1;
         } else if (c <= 0x7ff) {
@@ -165,10 +165,10 @@ FMC_API size_t C_Conv_utf16_to_8_length(size_t sz, const utf16_t* buf, size_t *c
     return result;
 }
 
-FMC_API size_t C_Conv_utf32_to_8_length(size_t sz, const utf32_t* buf, size_t *csz) {
+FMC_API size_t C_Conv_char32_to_8_length(size_t sz, const char32_t* buf, size_t *csz) {
     int i, result = 0;
     for (i = 0; i < sz; i++) {
-        utf32_t c = buf[i];
+        char32_t c = buf[i];
         if (c <= 0x7f) {
             result += 1;
         } else if (c <= 0x7ff) {
@@ -186,7 +186,7 @@ FMC_API size_t C_Conv_utf32_to_8_length(size_t sz, const utf32_t* buf, size_t *c
 
 /* -------------------------- UTF-x Conversions -------------------------- */
 
-static bool has_conbytes(const utf8_t* buf, int i, size_t count, size_t max) {
+static bool has_conbytes(const char8_t* buf, int i, size_t count, size_t max) {
     for (int k = 1; k <= count; k++) {
         if (i+k >= max) {
             return false;
@@ -199,26 +199,26 @@ static bool has_conbytes(const utf8_t* buf, int i, size_t count, size_t max) {
     return true;
 }
 
-static int read_utf8(utf32_t* cpp, size_t insz, const utf8_t* inbuf, size_t i) {
+static int read_utf8(char32_t* cpp, size_t insz, const char8_t* inbuf, size_t i) {
     uint8_t c = OCTET(inbuf[i]);
     if (c <= 0x7F) {
         (*cpp) = c;
         return 1;
     } else if (c >= 0xC0 && c < 0xE0 && has_conbytes(inbuf, i, 1, insz)) {
         uint32_t c2 = OCTET(inbuf[i+1]);
-        (*cpp) = (utf32_t)(((c & 0x1F) << 6) | (c2 & 0x3F));
+        (*cpp) = (char32_t)(((c & 0x1F) << 6) | (c2 & 0x3F));
         return 2;
     } else if (c >= 0xE0 && c < 0xF0 && has_conbytes(inbuf, i, 2, insz)) {
         uint32_t c2 = OCTET(inbuf[i+1]);
         uint32_t c3 = OCTET(inbuf[i+2]);
         (*cpp) = 
-            (utf32_t)(((c & 0x0F) << 12) | ((c2 & 0x3F) << 6) | (c3 & 0x3F));
+            (char32_t)(((c & 0x0F) << 12) | ((c2 & 0x3F) << 6) | (c3 & 0x3F));
         return 3;
     } else if (c >= 0xF0 && c < 0xF8 && has_conbytes(inbuf, i, 3, insz)) {
         uint32_t c2 = OCTET(inbuf[i+1]);
         uint32_t c3 = OCTET(inbuf[i+2]);
         uint32_t c4 = OCTET(inbuf[i+3]);
-        (*cpp) = (utf32_t)(((c & 0x07) << 18) 
+        (*cpp) = (char32_t)(((c & 0x07) << 18) 
                         | ((c2 & 0x3F) << 12) 
                         | ((c3 & 0x3F) << 6) 
                         | (c4 & 0x3F));
@@ -228,7 +228,7 @@ static int read_utf8(utf32_t* cpp, size_t insz, const utf8_t* inbuf, size_t i) {
         uint32_t c3 = OCTET(inbuf[i+2]);
         uint32_t c4 = OCTET(inbuf[i+3]);
         uint32_t c5 = OCTET(inbuf[i+4]);
-        (*cpp) = (utf32_t)(((c & 0x03) << 24) 
+        (*cpp) = (char32_t)(((c & 0x03) << 24) 
                         | ((c2 & 0x3F) << 18) 
                         | ((c3 & 0x3F) << 12) 
                         | ((c4 & 0x3F) << 6)
@@ -240,7 +240,7 @@ static int read_utf8(utf32_t* cpp, size_t insz, const utf8_t* inbuf, size_t i) {
         uint32_t c4 = OCTET(inbuf[i+3]);
         uint32_t c5 = OCTET(inbuf[i+4]);
         uint32_t c6 = OCTET(inbuf[i+5]);
-        (*cpp) = (utf32_t)(((c & 0x03) << 30) 
+        (*cpp) = (char32_t)(((c & 0x03) << 30) 
                         | ((c2 & 0x3F) << 24) 
                         | ((c3 & 0x3F) << 28) 
                         | ((c4 & 0x3F) << 12)
@@ -252,7 +252,7 @@ static int read_utf8(utf32_t* cpp, size_t insz, const utf8_t* inbuf, size_t i) {
     return 0;
 }
 
-static int write_utf8(utf32_t cp, size_t outsz, utf8_t* outbuf, size_t j) {
+static int write_utf8(char32_t cp, size_t outsz, char8_t* outbuf, size_t j) {
     if (cp <= 0x7f) {
         outbuf[j] = cp;
         return 1;
@@ -293,11 +293,11 @@ static int write_utf8(utf32_t cp, size_t outsz, utf8_t* outbuf, size_t j) {
     return 0;
 }
 
-FMC_API size_t C_Conv_utf8_to_32(size_t insz, const utf8_t* inbuf, size_t outsz, utf32_t* outbuf) {
+FMC_API size_t C_Conv_char8_to_32(size_t insz, const char8_t* inbuf, size_t outsz, char32_t* outbuf) {
     size_t i = 0;
     size_t j;
     for (j = 0; i < insz && j < outsz; j++) {
-        utf32_t cp = 0;
+        char32_t cp = 0;
         int inci = read_utf8(&cp, insz, inbuf, i);
 
         if (inci <= 0) {
@@ -310,27 +310,27 @@ FMC_API size_t C_Conv_utf8_to_32(size_t insz, const utf8_t* inbuf, size_t outsz,
     return j;
 }
 
-static utf16_t high_surrogate(utf32_t v) {
+static char16_t high_surrogate(char32_t v) {
     return ((v - 0x10000) >> 10) + 0xD800;
 }
 
-static utf16_t low_surrogate(utf32_t v) {
+static char16_t low_surrogate(char32_t v) {
     return (v - 0x10000) + 0xDC00;
 }
 
-static utf32_t surrogate_pair(utf16_t high, utf16_t low) {
-    return (utf32_t)0x10000 
+static char32_t surrogate_pair(char16_t high, char16_t low) {
+    return (char32_t)0x10000 
                 + (((high - 0xD800) << 10)) 
                 + ((low - 0xDC00));
 }
 
-static int read_utf16(utf32_t *cpp, size_t insz, const utf16_t* inbuf, size_t i) {
-    utf32_t cp = inbuf[i];
+static int read_utf16(char32_t *cpp, size_t insz, const char16_t* inbuf, size_t i) {
+    char32_t cp = inbuf[i];
     if (!is_surrogate(cp)) {
         (*cpp) = cp;
         return 1;
     } else {
-        utf32_t cp2 = inbuf[i+1];
+        char32_t cp2 = inbuf[i+1];
         if (is_high_surrogate(cp) && is_low_surrogate(cp2)) {
             (*cpp) = surrogate_pair(cp, cp2);
             return 2;
@@ -344,7 +344,7 @@ static int read_utf16(utf32_t *cpp, size_t insz, const utf16_t* inbuf, size_t i)
     }
 }
 
-static int write_utf16(utf32_t cp, size_t outsz, utf16_t* outbuf, size_t j) {
+static int write_utf16(char32_t cp, size_t outsz, char16_t* outbuf, size_t j) {
     if (cp <= 0xFFFF) {
         outbuf[j] = cp;
         return 1;
@@ -358,11 +358,11 @@ static int write_utf16(utf32_t cp, size_t outsz, utf16_t* outbuf, size_t j) {
     }
 }
 
-FMC_API size_t C_Conv_utf8_to_16(size_t insz, const utf8_t* inbuf, size_t outsz, utf16_t* outbuf) {
+FMC_API size_t C_Conv_char8_to_16(size_t insz, const char8_t* inbuf, size_t outsz, char16_t* outbuf) {
     int i = 0;
     int j = 0;
     while (i < insz && j < outsz) {
-        utf32_t cp = 0;
+        char32_t cp = 0;
         int inci, incj;
 
         inci = read_utf8(&cp, insz, inbuf, i);
@@ -380,11 +380,11 @@ FMC_API size_t C_Conv_utf8_to_16(size_t insz, const utf8_t* inbuf, size_t outsz,
     return j;
 }
 
-FMC_API size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz, utf8_t* outbuf) {
+FMC_API size_t C_Conv_char16_to_8(size_t insz, const char16_t* inbuf, size_t outsz, char8_t* outbuf) {
     int i = 0;
     int j = 0;
     while (i < insz && j < outsz) {
-        utf32_t cp;
+        char32_t cp;
         int inci, incj;
 
         inci = read_utf16(&cp, insz, inbuf, i);
@@ -402,7 +402,7 @@ FMC_API size_t C_Conv_utf16_to_8(size_t insz, const utf16_t* inbuf, size_t outsz
     return j;
 }
 
-FMC_API size_t C_Conv_utf32_to_16(size_t insz, const utf32_t* inbuf, size_t outsz, utf16_t* outbuf) {
+FMC_API size_t C_Conv_char32_to_16(size_t insz, const char32_t* inbuf, size_t outsz, char16_t* outbuf) {
     int j = 0;
     for (int i = 0; i < insz && j < outsz; i++) {
         int incj = write_utf16(inbuf[i], outsz, outbuf, j);
@@ -415,11 +415,11 @@ FMC_API size_t C_Conv_utf32_to_16(size_t insz, const utf32_t* inbuf, size_t outs
     return j;
 }
 
-FMC_API size_t C_Conv_utf16_to_32(size_t insz, const utf16_t* inbuf, size_t outsz, utf32_t* outbuf) {
+FMC_API size_t C_Conv_char16_to_32(size_t insz, const char16_t* inbuf, size_t outsz, char32_t* outbuf) {
     int i = 0;
     int j = 0;
     for (j = 0; i < insz && j < outsz; j++) {
-        utf32_t cp;
+        char32_t cp;
         int inci = read_utf16(&cp, insz, inbuf, i);
 
         if (inci <= 0) {
@@ -432,7 +432,7 @@ FMC_API size_t C_Conv_utf16_to_32(size_t insz, const utf16_t* inbuf, size_t outs
     return j;
 }
 
-FMC_API size_t C_Conv_utf32_to_8(size_t insz, const utf32_t* inbuf, size_t outsz, utf8_t* outbuf) {
+FMC_API size_t C_Conv_char32_to_8(size_t insz, const char32_t* inbuf, size_t outsz, char8_t* outbuf) {
     size_t i;
     size_t j = 0;
     for (i = 0; i < insz && j < outsz; i++) {
