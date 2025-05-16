@@ -74,7 +74,7 @@ static const char* ucs2cstr(const char32_t* ucs) {
     size_t wlen = ucslen(ucs);
     size_t len = 0;
 
-    bzero(buf, STRBUFSIZ);
+    memset(buf, 0, STRBUFSIZ);
     for (int i = 0; i < wlen; i++) {
         len = append_ascii(ucs[i], buf, len);
     }
@@ -94,7 +94,7 @@ static const char* jcs2cstr(const char16_t* jcs) {
     size_t jlen = jcslen(jcs);
     size_t len = 0;
 
-    bzero(buf, STRBUFSIZ);
+    memset(buf, 0, STRBUFSIZ);
     for (int i = 0; i < jlen; i++) {
         len = append_ascii(jcs[i], buf, len);
     }
@@ -106,7 +106,7 @@ static const char* utf2cstr(const char* utf8str) {
     size_t slen = strlen(utf8str);
     size_t len = 0;
 
-    bzero(buf, STRBUFSIZ);
+    memset(buf, 0, STRBUFSIZ);
     for (int i = 0; i < slen; i++) {
         len = append_ascii(0xFF & utf8str[i], buf, len);
     }
@@ -118,7 +118,7 @@ static const char32_t* cstr2ucs(const char* s) {
     size_t len = strlen(s);
     int i;
 
-    bzero(buf, STRBUFSIZ);
+    memset(buf, 0, STRBUFSIZ);
     for (i = 0; i < len; i++) {
         buf[i] = (char32_t)s[i];
     }
@@ -130,7 +130,7 @@ static const char8_t* ucs2utf8(const char32_t* s) {
     size_t bsz;
     char8_t buf[STRBUFSIZ];
 
-    bzero(buf, sizeof(buf));
+    memset(buf, 0, sizeof(buf));
     bsz = C_Conv_char32_to_8(ucslen(s), s, STRBUFSIZ, buf);
 
     return (char8_t*)stralloc(buf, bsz, sizeof(char8_t));
@@ -140,7 +140,7 @@ static const char16_t* ucs2utf16(const char32_t* s) {
     size_t bsz;
     char16_t buf[STRBUFSIZ/2];
 
-    bzero(buf, sizeof(buf));
+    memset(buf, 0, sizeof(buf));
     bsz = C_Conv_char32_to_16(ucslen(s), s, STRBUFSIZ, buf);
 
     return (char16_t*)stralloc(buf, bsz, sizeof(char16_t));
@@ -165,12 +165,12 @@ static int free_strings() {
 static void string_smoke() {
     int count = 0;
 
-    lsequal("alpha", ucs2cstr(L"alpha"));
-    lsequal("bravo", ucs2cstr(L"bravo"));
-    lsequal("charlie", ucs2cstr(L"charlie"));
-    lsequal("delta", ucs2cstr(L"delta"));
-    lsequal("echo", ucs2cstr(L"echo"));
-    lsequal("tsch\\u{fc}\\u{df}", ucs2cstr(L"tschüß"));
+    lsequal("alpha", ucs2cstr(U"alpha"));
+    lsequal("bravo", ucs2cstr(U"bravo"));
+    lsequal("charlie", ucs2cstr(U"charlie"));
+    lsequal("delta", ucs2cstr(U"delta"));
+    lsequal("echo", ucs2cstr(U"echo"));
+    lsequal("tsch\\u{fc}\\u{df}", ucs2cstr(U"tschüß"));
 
     const char* actual = ucs2cstr(cstr2ucs("foxtrot"));
     lsequal("foxtrot", actual);
@@ -187,7 +187,7 @@ static void string_smoke() {
 static void conv_smoke() {
     char* inbuf = "a very simple problem";
     size_t insz = strlen(inbuf) + 1;
-    const char32_t* expect = L"\ufeffa very simple problem";
+    const char32_t* expect = U"\ufeffa very simple problem";
     ssize_t nread = 0;
     ssize_t nwrit = 0;
     int errcode;
@@ -220,7 +220,7 @@ static void conv_char8_to_32() {
     const size_t outsz = STRBUFSIZ/4;
     char32_t outbuf[outsz];
 
-    bzero(outbuf, sizeof(outbuf));
+    memset(outbuf, 0, sizeof(outbuf));
 
     result = C_Conv_char8_to_32(insz, inbuf, outsz, outbuf);
     errcode = errno;
@@ -246,7 +246,7 @@ static void conv_char32_to_8() {
     size_t result;
     int errcode;
 
-    bzero(outbuf, STRBUFSIZ);
+    memset(outbuf, 0, STRBUFSIZ);
 
     result = C_Conv_char32_to_8(insz, inbuf, STRBUFSIZ, outbuf);
     errcode = errno;
@@ -273,7 +273,7 @@ static void conv_char8_to_16() {
     const size_t outsz = STRBUFSIZ/4;
     char16_t outbuf[outsz];
 
-    bzero(outbuf, sizeof(outbuf));
+    memset(outbuf, 0, sizeof(outbuf));
 
     result = C_Conv_char8_to_16(insz, inbuf, outsz, outbuf);
     errcode = errno;
@@ -298,7 +298,7 @@ static void conv_char16_to_8() {
     size_t result;
     int errcode;
 
-    bzero(outbuf, STRBUFSIZ);
+    memset(outbuf, 0, STRBUFSIZ);
 
     result = C_Conv_char16_to_8(insz, inbuf, STRBUFSIZ, outbuf);
     errcode = errno;
@@ -327,7 +327,7 @@ static void conv_char32_to_16() {
     size_t result;
     int errcode;
 
-    bzero(outbuf, outsz);
+    memset(outbuf, 0, outsz);
 
     result = C_Conv_char32_to_16(insz, inbuf, outsz, outbuf);
     errcode = errno;
@@ -355,7 +355,7 @@ static void conv_char16_to_32() {
     size_t result;
     int errcode;
 
-    bzero(outbuf, outsz);
+    memset(outbuf, 0, outsz);
 
     result = C_Conv_char16_to_32(insz, inbuf, outsz, outbuf);
     errcode = errno;
@@ -389,8 +389,8 @@ static char32_t PLANE_1_STRING[] = {
 static void conv_length_8_to_32() {
     const char32_t* expect[] = {
         PLANE_1_STRING,
-        L"This has Unicode: \u0024\u20AC ...",
-        L"This does not."
+        U"This has Unicode: \u0024\u20AC ...",
+        U"This does not."
     };
     const int expectsz = sizeof(expect) / sizeof (const char32_t*);
 
@@ -411,8 +411,8 @@ static void conv_length_8_to_32() {
 static void conv_length_8_to_16() {
     const char32_t* expect[] = {
         PLANE_1_STRING,
-        L"This has Unicode: \u0024\u20AC ...",
-        L"This does not."
+        U"This has Unicode: \u0024\u20AC ...",
+        U"This does not."
     };
     const int expectsz = sizeof(expect) / sizeof (const char32_t*);
 
@@ -433,8 +433,8 @@ static void conv_length_8_to_16() {
 static void conv_length_16_to_8() {
     const char32_t* expect[] = {
         PLANE_1_STRING,
-        L"This has Unicode: \u0024\u20AC ...",  // 24 char32_t
-        L"This does not."                       // 14 char32_t
+        U"This has Unicode: \u0024\u20AC ...",  // 24 char32_t
+        U"This does not."                       // 14 char32_t
     };
     const int expectsz = sizeof(expect) / sizeof (const char32_t*);
 
@@ -455,8 +455,8 @@ static void conv_length_16_to_8() {
 static void conv_length_32_to_8() {
     const char32_t* input[] = {
         PLANE_1_STRING,
-        L"This has Unicode: \u0024\u20AC ...",   // 24 char32_t
-        L"This does not."                        // 14 char32_t
+        U"This has Unicode: \u0024\u20AC ...",   // 24 char32_t
+        U"This does not."                        // 14 char32_t
     };
     const int inputsz = sizeof(input) / sizeof (const char32_t*);
 
@@ -480,11 +480,11 @@ static void conv_min_bytes() {
         char32_t *data;
     } test[] = {
         { 4, PLANE_1_STRING },
-        { 2, L"Unicode: \u0024\u20AC ..." },
-        { 2, L"Unicode trap: \u0100 ..." },
-        { 1, L"Latin 1: tschüß! \u00FF" },
-        { 1, L"ASCII: blah blahbidy blah" },
-        { 0, L"" }
+        { 2, U"Unicode: \u0024\u20AC ..." },
+        { 2, U"Unicode trap: \u0100 ..." },
+        { 1, U"Latin 1: tschüß! \u00FF" },
+        { 1, U"ASCII: blah blahbidy blah" },
+        { 0, U"" }
     };
     const int testsz = sizeof(test) / sizeof (struct min_bytes_pair);
 

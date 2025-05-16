@@ -159,12 +159,12 @@ static void symbol_for_cstring() {
 
     lok(sym1 == sym2);
 
-    bzero(buffer, STRBUFSIZ);
+    memset(buffer, 0, STRBUFSIZ);
     length = C_Symbol_as_cstring(sym1, STRBUFSIZ, buffer);
     lok(length == 7);
     lsequal("cstring", buffer);
 
-    bzero(buffer, STRBUFSIZ);
+    memset(buffer, 0, STRBUFSIZ);
     length = C_Symbol_as_cstring(sym2, STRBUFSIZ, buffer);
     lok(length == 7);
     lsequal("cstring", buffer);
@@ -186,7 +186,7 @@ static void symbol_as_cstring() {
     lok(strsym != NULL);
     lok(is_C_Symbol(strsym));
 
-    bzero(buffer, STRBUFSIZ);
+    memset(buffer, 0, STRBUFSIZ);
     length = C_Symbol_as_cstring(strsym, STRBUFSIZ, buffer);
     lok(length == 11);
     lsequal("ISO-Latin-1", buffer);
@@ -195,7 +195,7 @@ static void symbol_as_cstring() {
     lok(sym != NULL);
     lok(is_C_Symbol(sym));
 
-    bzero(buffer, STRBUFSIZ);
+    memset(buffer, 0, STRBUFSIZ);
     length = C_Symbol_as_cstring(sym, STRBUFSIZ, buffer);
     lok(length == 0);
     lsequal("", buffer);
@@ -205,7 +205,7 @@ static void symbol_as_cstring() {
     C_Symbol_release(&sym);
     lok(sym == NULL);
 
-    bzero(buffer, STRBUFSIZ);
+    memset(buffer, 0, STRBUFSIZ);
     length = C_Symbol_as_cstring(sym, STRBUFSIZ, buffer);
     lok(length == -1);
 }

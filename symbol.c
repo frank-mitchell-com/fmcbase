@@ -105,7 +105,7 @@ static C_Symbol* symbol_alloc_init(size_t len, const uint8_t* uptr) {
     C_Symbol* result = (C_Symbol*)malloc(sizeof(C_Symbol));
     if (!result) goto error;
 
-    bzero(result, sizeof(C_Symbol));
+    memset(result, 0, sizeof(C_Symbol));
 
     if (uptr) {
         uint8_t* buf = (uint8_t*)calloc(len+1, sizeof(uint8_t));

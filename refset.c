@@ -44,7 +44,7 @@ FMC_API void C_Ref_Set_new(C_Ref_Set* *rsptr, size_t minsz) {
     rs = malloc(sizeof(C_Ref_Set));
     if (!rs) return;
 
-    bzero(rs, sizeof(C_Ref_Set));
+    memset(rs, 0, sizeof(C_Ref_Set));
     rs->arraylen = (minsz > TABLE_MINSIZ) ? minsz : TABLE_MINSIZ;
     rs->array    = calloc(rs->arraylen, sizeof(void*));
     rs->nentries = 0;

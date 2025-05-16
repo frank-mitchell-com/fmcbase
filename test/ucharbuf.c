@@ -75,7 +75,7 @@ static const char* ucs2cstr(const char32_t* ucs) {
     size_t wlen = ucslen(ucs);
     size_t len = 0;
 
-    bzero(buf, STRBUFSIZ);
+    memset(buf, 0, STRBUFSIZ);
     for (int i = 0; i < wlen; i++) {
         len = append_ascii(ucs[i], buf, len);
     }
@@ -87,7 +87,7 @@ static const char32_t* cstr2ucs(const char* s) {
     size_t len = strlen(s);
     int i;
 
-    bzero(buf, STRBUFSIZ);
+    memset(buf, 0, STRBUFSIZ);
     for (i = 0; i < len; i++) {
         buf[i] = (char32_t)s[i];
     }

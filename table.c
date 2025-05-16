@@ -99,7 +99,7 @@ FMC_API void C_Table_new(C_Table* *tptr, size_t minsz) {
     t = malloc(sizeof(C_Table));
     if (!t) return;
 
-    bzero(t, sizeof(C_Table));
+    memset(t, 0, sizeof(C_Table));
     t->hash     = default_hash;
     t->eq       = default_equals;
     t->cp       = default_copy;
@@ -501,7 +501,7 @@ FMC_API void C_Userdata_clear(C_Userdata* ud, bool iscopy) {
     if (iscopy && !C_Userdata_is_reference(ud)) {
         free(ud->ptr);
     }
-    bzero(ud, sizeof(C_Userdata));
+    memset(ud, 0, sizeof(C_Userdata));
 }
 
 FMC_API void C_Userdata_set(C_Userdata* ud, tag_t tag, size_t len, const void* ptr) {

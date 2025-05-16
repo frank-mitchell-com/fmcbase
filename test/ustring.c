@@ -41,16 +41,16 @@ typedef struct string_data {
 } string_data;
 
 string_data EXPECT[] = {
-    {  0, "",                   "LATIN1",       L""},
-    {  5, "alpha",              "US-ASCII",     L"alpha"},
-    {  4, "beta",               "US-ASCII",     L"beta"},
-    {  5, "gamma",              "ASCII",        L"gamma"},
-    {  5, "delta",              "US-ASCII",     L"delta"},
-    { 14, "verisimilitude",     "US-ASCII",     L"verisimilitude"},
-    {  6, "tsch\xfc\xdf",       "LATIN1",       L"tschüß"},
-    {  4, "\x20\xAC\x00?",      "UCS-2BE",      L"\u20AC?"},
-    {  4, "\xAC\x20?\x00",      "UCS-2LE",      L"\u20AC?"},
-    {  4, "\x00\x00\xD5\x5C",   "UCS-4BE",      L"\uD55C"},
+    {  0, "",                   "LATIN1",       U""},
+    {  5, "alpha",              "US-ASCII",     U"alpha"},
+    {  4, "beta",               "US-ASCII",     U"beta"},
+    {  5, "gamma",              "ASCII",        U"gamma"},
+    {  5, "delta",              "US-ASCII",     U"delta"},
+    { 14, "verisimilitude",     "US-ASCII",     U"verisimilitude"},
+    {  6, "tsch\xfc\xdf",       "LATIN1",       U"tschüß"},
+    {  4, "\x20\xAC\x00?",      "UCS-2BE",      U"\u20AC?"},
+    {  4, "\xAC\x20?\x00",      "UCS-2LE",      U"\u20AC?"},
+    {  4, "\x00\x00\xD5\x5C",   "UCS-4BE",      U"\uD55C"},
 };
 
 const int EXPECTSZ = sizeof(EXPECT)/sizeof(string_data);
@@ -101,7 +101,7 @@ static const char* ucs2cstr(const char32_t* ucs) {
     size_t wlen = ucslen(ucs);
     size_t len = 0;
 
-    bzero(buf, STRBUFSIZ);
+    memset(buf, 0, STRBUFSIZ);
     for (int i = 0; i < wlen; i++) {
         len = append_ascii(ucs[i], buf, len);
     }
@@ -113,7 +113,7 @@ static const char8_t* ucs2utf8(const char32_t* ucs) {
     size_t wlen = ucslen(ucs);
     size_t len;
 
-    bzero(buf, sizeof(buf));
+    memset(buf, 0, sizeof(buf));
     len = C_Conv_char32_to_8(wlen, ucs, STRBUFSIZ, buf);
     return (char8_t*)stralloc(buf, len, sizeof(char));
 }
@@ -123,7 +123,7 @@ static const char16_t* ucs2utf16(const char32_t* ucs) {
     size_t wlen = ucslen(ucs);
     size_t len;
 
-    bzero(buf, sizeof(buf));
+    memset(buf, 0, sizeof(buf));
     len = C_Conv_char32_to_16(wlen, ucs, STRBUFSIZ, buf);
     return (char16_t*)stralloc(buf, len, sizeof(char16_t));
 }
@@ -141,7 +141,7 @@ static const char32_t* cstr2ucs(const char* s) {
     size_t len = strlen(s);
     int i;
 
-    bzero(buf, STRBUFSIZ);
+    memset(buf, 0, STRBUFSIZ);
     for (i = 0; i < len; i++) {
         buf[i] = (char32_t)s[i];
     }
@@ -180,7 +180,7 @@ static void string_smoke() {
 
 static void string_chars() {
     const C_Ustring* s = NULL;
-    const char32_t* expect = L"alpha";
+    const char32_t* expect = U"alpha";
     int expectsz = ucslen(expect);
     uint8_t outbuf[STRBUFSIZ];
 
@@ -205,7 +205,7 @@ USTR_API bool C_Ustring_new_ascii(const C_Ustring* *sp, size_t sz, const char* b
 static void string_from_utf8() {
     char32_t buffer[STRBUFSIZ];
 
-    bzero(buffer, sizeof(buffer));
+    memset(buffer, 0, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
         const C_Ustring* s = NULL;
@@ -229,7 +229,7 @@ static void string_from_utf8() {
 static void string_from_utf16() {
     char32_t buffer[STRBUFSIZ];
 
-    bzero(buffer, sizeof(buffer));
+    memset(buffer, 0, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
         const C_Ustring* s = NULL;
@@ -253,7 +253,7 @@ static void string_from_utf16() {
 static void string_from_utf32() {
     char32_t buffer[STRBUFSIZ];
 
-    bzero(buffer, sizeof(buffer));
+    memset(buffer, 0, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
         const C_Ustring* s = NULL;
@@ -277,7 +277,7 @@ static void string_from_utf32() {
 static void string_from_charset() {
     char32_t buffer[STRBUFSIZ];
 
-    bzero(buffer, sizeof(buffer));
+    memset(buffer, 0, sizeof(buffer));
     wmemset(buffer, '!', STRBUFSIZ-1);
 
     for (int i = 0; i < EXPECTSZ; i++) {
@@ -304,7 +304,7 @@ static void string_from_charset() {
 static void string_to_utf8() {
     char8_t buffer[STRBUFSIZ];
 
-    bzero(buffer, sizeof(buffer));
+    memset(buffer, 0, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
         const char32_t* wstr = EXPECT[i].expect;
@@ -330,7 +330,7 @@ static void string_to_utf8() {
 static void string_to_charset() {
     char8_t buffer[STRBUFSIZ];
 
-    bzero(buffer, sizeof(buffer));
+    memset(buffer, 0, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
         const char32_t* wstr = EXPECT[i].expect;
