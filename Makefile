@@ -17,6 +17,7 @@ DESTLIB=$(DESTIB)/lib
 
 LIB=$(SRCDIR)/lib$(LIBNAME).a
 SHLIB=$(SRCDIR)/lib$(LIBNAME).so
+SONAME=lib$(LIBNAME).so
 
 CFLAGS=-g -Wall -fPIC
 IFLAGS= -I $(SRCDIR) -I $(TESTDIR)
@@ -39,7 +40,7 @@ test: $(TESTS)
 	./$@
 
 $(SHLIB): $(OBJECTS)
-	$(CC) -shared -Wl,-soname,$(SHLIB) -o $(SHLIB) $^
+	$(CC) -shared -Wl,-soname,$(SONAME) -o $(SHLIB) $^ $(LICONV)
 
 $(LIB): $(OBJECTS)
 	ar rcs $(LIB) $^
