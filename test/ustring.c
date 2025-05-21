@@ -28,7 +28,9 @@
 #include "convert.h"
 #include "ustring.h"
 
-#define STRBUFSIZ   64
+#define STRBUFSIZ       256
+#define JSTRBUFSIZ      128
+#define USTRBUFSIZ      64
 
 /* ------------------------ TEST DATA ----------------------------- */
 
@@ -78,7 +80,7 @@ static int append_ascii(unsigned int c, char buf[], int j) {
         buf[j] = (char)c;
         len += 1;
     } else {
-        sprintf(&(buf[len]), "\\u{%x}", c); 
+        sprintf(&(buf[len]), "\\u{%x}", c);
         len = strlen(buf);
     }
     return len;
@@ -97,8 +99,8 @@ static const char* ucs2cstr(const char32_t* ucs) {
     size_t ulen = ucslen(ucs);
     size_t len = 0;
 
-    memset(buf, 0, STRBUFSIZ);
-    for (int i = 0; i < ulen; i++) {
+    memset(buf, 0, sizeof(buf));
+    for (int i = 0; i < ulen && len + 4 < STRBUFSIZ; i++) {
         len = append_ascii(ucs[i], buf, len);
     }
     return (char*)stralloc(buf, len, sizeof(char));
@@ -115,12 +117,12 @@ static const char8_t* ucs2utf8(const char32_t* ucs) {
 }
 
 static const char16_t* ucs2utf16(const char32_t* ucs) {
-    char16_t buf[STRBUFSIZ+2];
+    char16_t buf[JSTRBUFSIZ];
     size_t ulen = ucslen(ucs);
     size_t len;
 
     memset(buf, 0, sizeof(buf));
-    len = C_Conv_char32_to_16(ulen, ucs, STRBUFSIZ, buf);
+    len = C_Conv_char32_to_16(ulen, ucs, JSTRBUFSIZ, buf);
     return (char16_t*)stralloc(buf, len, sizeof(char16_t));
 }
 
@@ -133,11 +135,11 @@ static const size_t jcslen(const char16_t* jcs) {
 }
 
 static const char32_t* cstr2ucs(const char* s) {
-    char32_t buf[STRBUFSIZ];
+    char32_t buf[USTRBUFSIZ];
     size_t len = strlen(s);
     int i;
 
-    memset(buf, 0, STRBUFSIZ);
+    memset(buf, 0, sizeof(buf));
     for (i = 0; i < len; i++) {
         buf[i] = (char32_t)s[i];
     }
@@ -197,7 +199,7 @@ USTR_API bool C_Ustring_new_ascii(const C_Ustring* *sp, size_t sz, const char* b
 */
 
 static void string_from_utf8() {
-    char32_t buffer[STRBUFSIZ];
+    char32_t buffer[USTRBUFSIZ];
 
     memset(buffer, 0, sizeof(buffer));
 
@@ -210,7 +212,7 @@ static void string_from_utf8() {
         lok(s != NULL);
 
         if (s) {
-            int result = (int)C_Ustring_to_utf32(s, 0, STRBUFSIZ, buffer);
+            int result = (int)C_Ustring_to_utf32(s, 0, USTRBUFSIZ, buffer);
             lequal((int) ucslen(EXPECT[i].expect) + 1, result);
             lsequal(ucs2cstr(EXPECT[i].expect), ucs2cstr(buffer));
         }
@@ -221,7 +223,7 @@ static void string_from_utf8() {
 }
 
 static void string_from_utf16() {
-    char32_t buffer[STRBUFSIZ];
+    char32_t buffer[USTRBUFSIZ];
 
     memset(buffer, 0, sizeof(buffer));
 
@@ -234,7 +236,7 @@ static void string_from_utf16() {
         lok(s != NULL);
 
         if (s) {
-            int result = (int)C_Ustring_to_utf32(s, 0, STRBUFSIZ, buffer);
+            int result = (int)C_Ustring_to_utf32(s, 0, USTRBUFSIZ, buffer);
             lequal((int) ucslen(EXPECT[i].expect) + 1, result);
             lsequal(ucs2cstr(EXPECT[i].expect), ucs2cstr(buffer));
         }
@@ -245,7 +247,7 @@ static void string_from_utf16() {
 }
 
 static void string_from_utf32() {
-    char32_t buffer[STRBUFSIZ];
+    char32_t buffer[USTRBUFSIZ];
 
     memset(buffer, 0, sizeof(buffer));
 
@@ -258,7 +260,7 @@ static void string_from_utf32() {
         lok(s != NULL);
 
         if (s) {
-            int result = (int)C_Ustring_to_utf32(s, 0, STRBUFSIZ, buffer);
+            int result = (int)C_Ustring_to_utf32(s, 0, USTRBUFSIZ, buffer);
             lequal((int) ucslen(EXPECT[i].expect) + 1, result);
             lsequal(ucs2cstr(EXPECT[i].expect), ucs2cstr(buffer));
         }
@@ -269,10 +271,10 @@ static void string_from_utf32() {
 }
 
 static void string_from_charset() {
-    char32_t buffer[STRBUFSIZ];
+    char32_t buffer[USTRBUFSIZ];
 
     memset(buffer, 0, sizeof(buffer));
-    for (int i = 0; i < STRBUFSIZ; i++) {
+    for (int i = 0; i < USTRBUFSIZ; i++) {
         buffer[i] = U'!';
     }
 
@@ -288,7 +290,7 @@ static void string_from_charset() {
         lok(s != NULL);
 
         if (s) {
-            lequal(explen+1, (int)C_Ustring_to_utf32(s, 0, STRBUFSIZ, buffer));
+            lequal(explen+1, (int)C_Ustring_to_utf32(s, 0, USTRBUFSIZ, buffer));
             lsequal(ucs2cstr(expstr), ucs2cstr(buffer));
         }
         lok(C_Ustring_release(&s));
@@ -339,7 +341,7 @@ static void string_to_charset() {
         lok(s != NULL);
 
         if (s) {
-            size_t result = 
+            size_t result =
                     C_Ustring_to_charset(s, UTF_8, 0, STRBUFSIZ, buffer);
             lequal(explen + 1, (int)result);
             lsequal(expstr, (const char*)buffer);
