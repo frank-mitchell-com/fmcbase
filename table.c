@@ -58,7 +58,7 @@ static bool default_equals(const C_Userdata* a, const C_Userdata* b) {
 
     if (a->len == 0) return a->ptr == b->ptr;
 
-    return bcmp(a->ptr, b->ptr, a->len) == 0 ? true : false;
+    return memcmp(a->ptr, b->ptr, (size_t)a->len) == 0 ? true : false;
 }
 
 static bool default_copy(C_Userdata* to, const C_Userdata* from) {
@@ -68,6 +68,8 @@ static bool default_copy(C_Userdata* to, const C_Userdata* from) {
 
     ptr = malloc(1 + from->len);
     if (!ptr) return false;
+
+    memset(ptr, 0, 1 + from->len);
     memcpy(ptr, from->ptr, from->len);
 
     C_Userdata_set(to, from->tag, from->len, ptr);
@@ -300,7 +302,7 @@ static bool insert_pair(C_Table* t, const C_Userdata* key, const C_Userdata* val
         size_t oldlen = t->arraylen;
         size_t newlen = oldlen * 2 + 1;
         C_Table_Entry** newarray 
-            = reallocarray(t->array, newlen, sizeof(C_Table_Entry*));
+            = (C_Table_Entry **)realloc(t->array, newlen * sizeof(C_Table_Entry*));
         if (newarray != NULL) {
             for (int i = oldlen; i < newlen; i++) {
                 // TODO: Yes, there's a better way to do this

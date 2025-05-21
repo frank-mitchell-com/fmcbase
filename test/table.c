@@ -23,8 +23,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "minctest.h"
 #include "table.h"
+
+#define STRBUFSIZ  512 
 
 static C_Table* t = NULL;
 
@@ -33,22 +36,74 @@ typedef struct _kvpair {
     const char* value;
 } kvpair;
 
+typedef struct linkedlist {
+    struct linkedlist* tail;
+    void*   str;
+} list_t;
+
+static list_t* _strhead = NULL;
+
+static void* stralloc(void* buf, size_t len, size_t csiz) {
+    void* result = calloc(len+1, csiz);
+
+    memcpy(result, buf, len * csiz);
+
+    list_t* prev = _strhead;
+    _strhead = calloc(1, sizeof(list_t));
+    _strhead->tail = prev;
+    _strhead->str  = result;
+    return result;
+}
+
+static int append_ascii(unsigned int c, char buf[], int j) {
+    int len = j;
+    if (isprint(c) || c == ' ') {
+        buf[j] = (char)c;
+        len += 1;
+    } else {
+        sprintf(&(buf[len]), "\\u{%x}", c); 
+        len = strlen(buf);
+    }
+    return len;
+}
+
+static const char* tmpstr(const char* instr) {
+    char buf[STRBUFSIZ];
+    size_t inlen = strlen(instr);
+    size_t len = 0;
+
+    memset(buf, 0, STRBUFSIZ);
+    for (int i = 0; i < inlen; i++) {
+        len = append_ascii(instr[i], buf, len);
+    }
+    return (const char*)stralloc(buf, len, sizeof(char));
+}
+
+static int free_strings() {
+    int count = 0;
+    list_t* head = _strhead;
+
+    _strhead = NULL;
+
+    while (head != NULL) {
+        list_t* prev = head;
+        head = head->tail;
+        free(prev->str);
+        free(prev);
+        count++;
+    }
+    return count;
+}
+
 static const char* tostr(C_Userdata ud) {
-    static char* last_result;
-    static char* result;
-
-    free(last_result);
-
-    last_result = result;
-
-    result = calloc(50 + ud.len, sizeof(char));
+    char buf[STRBUFSIZ];
 
     if (ud.len == 0 || ud.ptr == NULL) {
-        sprintf(result, "{tag=%d,len=%ld,ptr=%p}", ud.tag, ud.len, ud.ptr);
+        sprintf(buf, "{tag=%d,len=%ld,ptr=%p}", ud.tag, ud.len, ud.ptr);
     } else {
-        sprintf(result, "{tag=%d,len=%ld,ptr=\"%*s\"}", ud.tag, ud.len, (int)ud.len, (char*)ud.ptr);
+        sprintf(buf, "{tag=%d,len=%ld,ptr=\"%*s\"}", ud.tag, ud.len, (int)ud.len, (char*)ud.ptr);
     }
-    return result;
+    return tmpstr(buf);
 }
 
 static void setup() {
@@ -59,6 +114,7 @@ static void setup() {
 
 static void teardown() {
     C_Table_free(&t);
+    free_strings();
 }
 
 static void table_smoke() {

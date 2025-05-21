@@ -21,23 +21,25 @@ LFLAGS=-L$(SRCDIR) -l$(LIBNAME) -lm
 
 HEADERS=$(wildcard $(SRCDIR)/*.h)
 OBJECTS=$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/*.c))
-TESTS=$(patsubst %.c,%.run,$(wildcard $(TESTDIR)/*.c))
+TESTS=$(patsubst %.c,%-test,$(wildcard $(TESTDIR)/*.c))
 
-.PHONY: all clean test install
+.PHONY: all clean test install posix
 
-all: $(LIB) $(SHLIB) test
+all: $(LIB) test
+
+posix: all $(SHLIB)
 
 test: $(TESTS)
 
-%.run: %.c $(LIB) $(HEADERS)
+%-test: %.c $(LIB) $(HEADERS)
 	$(CC) -static -g -O0 $(IFLAGS) -o $@ $< $(LFLAGS)
 	./$@
 
 $(SHLIB): $(OBJECTS)
-	$(CC) -shared -Wl,-soname,$(SHLIB) -o $(SHLIB) $<
+	$(CC) -shared -Wl,-soname,$(SHLIB) -o $(SHLIB) $^
 
 $(LIB): $(OBJECTS)
-	ar rcs $(LIB) $^ 
+	ar rcs $(LIB) $^
 
 %.o: %.c $(HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $<

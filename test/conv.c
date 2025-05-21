@@ -187,19 +187,26 @@ static void string_smoke() {
 static void conv_smoke() {
     char* inbuf = "a very simple problem";
     size_t insz = strlen(inbuf) + 1;
-    const char32_t* expect = U"\ufeffa very simple problem";
+    const char32_t* expect = U"a very simple problem";
     ssize_t nread = 0;
     ssize_t nwrit = 0;
+    const char* utf32;
     int errcode;
     size_t outsz = STRBUFSIZ;
     char outbuf[STRBUFSIZ];
 
-    nwrit = C_Conv_transcode(UTF_8, UTF_32, insz, inbuf, outsz, outbuf, &nread);
+    if (((const char*)expect)[0] == '\x00') {
+        utf32 = "UTF-32BE";
+    } else {
+        utf32 = "UTF-32LE";
+    }
+
+    nwrit = C_Conv_transcode("UTF-8", utf32, insz, inbuf, outsz, outbuf, &nread);
     errcode = errno;
 
     lequal(0, errcode);
     lequal((int)insz, (int)nread);
-    lequal(92, (int)nwrit);
+    lequal(88, (int)nwrit);
     lok(memcmp(expect, outbuf, ucslen(expect)) == 0);
     lsequal(ucs2cstr(expect), ucs2cstr((char32_t*)outbuf));
 

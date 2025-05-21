@@ -25,6 +25,15 @@
 
 #include "common.h"
 
+/*
+ * TODO: Adapt for platform endinanness?
+ */
+
+#define ASCII   "US-ASCII"
+#define UTF_8   "UTF-8"
+#define UTF_16  "UTF-16"
+#define UTF_32  "UTF-32"
+
 /**
  * A string of Unicode codepoints, i.e. UTF-32 or `char32_t`.
  * The implementation stores strings efficiently if no character in the

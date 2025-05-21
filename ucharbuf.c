@@ -74,7 +74,7 @@ static bool ensure_capacity(C_Uchar_Buffer* self, size_t n) {
     if (n <= self->capacity) {
         return true;
     }
-    newb = reallocarray(self->buffer, n+1, sizeof(char32_t));
+    newb = (char32_t*)realloc(self->buffer, (n+1) * sizeof(char32_t));
     if (newb == 0) {
         return false;
     }
@@ -103,6 +103,7 @@ FMC_API void C_Uchar_Buffer_new_from_ucs(C_Uchar_Buffer* *newref, const char32_t
     size_t len = strlen32(ucs);
     alloc_init(newref, len);
     if (*newref == NULL) return;
+    memset((*newref)->buffer, 0, len * sizeof(char32_t));
     memcpy((*newref)->buffer, ucs, len * sizeof(char32_t));
     (*newref)->length = len;
 }

@@ -28,15 +28,6 @@
 #include <sys/types.h>
 #include <wchar.h>
 
-/*
- * TODO: Adapt for platform endinanness?
- */
-
-#define ASCII   "US-ASCII"
-#define UTF_8   "UTF-8"
-#define UTF_16  "UTF-16"
-#define UTF_32  "UTF-32"
-
 /**
  * Type for uncategorized byte data.
  */

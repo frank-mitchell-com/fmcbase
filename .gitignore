@@ -1,5 +1,6 @@
 *.a
 *.o
-*.run
 *.so
+*-test
+*-test.exe
 doxdocs
