@@ -134,13 +134,15 @@ static void charbuf_chars() {
 
     C_Ustring_new_utf32(&s, wlen, ucs);
     lok(s != NULL);
-    C_Uchar_Buffer_new_from_string(&b, s);
-    lok(b != NULL);
-    lequal((int)wlen, (int)C_Uchar_Buffer_length(b));
+    if (s != NULL) {
+        C_Uchar_Buffer_new_from_string(&b, s);
+        lok(b != NULL);
+        lequal((int)wlen, (int)C_Uchar_Buffer_length(b));
 
-    for (int i = 0; i < wlen; i++) {
-        lequal((int)ucs[i], (int)C_Uchar_Buffer_char_at(b, i));
-        lequal((int)ucs[i], (int)C_Uchar_Buffer_char_at(b, -(wlen-i)));
+        for (int i = 0; i < wlen; i++) {
+            lequal((int)ucs[i], (int)C_Uchar_Buffer_char_at(b, i));
+            lequal((int)ucs[i], (int)C_Uchar_Buffer_char_at(b, -(wlen-i)));
+        }
     }
 
     C_Ustring_release(&s);

@@ -86,6 +86,14 @@ static int append_ascii(unsigned int c, char buf[], int j) {
     return len;
 }
 
+static const size_t jstrlen(const char16_t* jstr) {
+    int i = 0;
+    while (jstr[i] != 0) {
+        i++;
+    }
+    return i;
+}
+
 static const size_t ucslen(const char32_t* ucs) {
     int i = 0;
     while (ucs[i] != 0) {
@@ -102,6 +110,18 @@ static const char* ucs2cstr(const char32_t* ucs) {
     memset(buf, 0, sizeof(buf));
     for (int i = 0; i < ulen && len + 4 < STRBUFSIZ; i++) {
         len = append_ascii(ucs[i], buf, len);
+    }
+    return (char*)stralloc(buf, len, sizeof(char));
+}
+
+static const char* jstr2cstr(const char16_t* jstr) {
+    char buf[STRBUFSIZ];
+    size_t jlen = jstrlen(jstr);
+    size_t len = 0;
+
+    memset(buf, 0, sizeof(buf));
+    for (int i = 0; i < jlen && len + 4 < STRBUFSIZ; i++) {
+        len = append_ascii(jstr[i], buf, len);
     }
     return (char*)stralloc(buf, len, sizeof(char));
 }
@@ -193,15 +213,8 @@ static void string_chars() {
     lok(s == NULL);
 }
 
-/*
- * TODO: test
-USTR_API bool C_Ustring_new_ascii(const C_Ustring* *sp, size_t sz, const char* buf);
-*/
-
 static void string_from_utf8() {
     char32_t buffer[USTRBUFSIZ];
-
-    memset(buffer, 0, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
         const C_Ustring* s = NULL;
@@ -212,6 +225,8 @@ static void string_from_utf8() {
         lok(s != NULL);
 
         if (s) {
+            memset(buffer, 0, sizeof(buffer));
+
             int result = (int)C_Ustring_to_utf32(s, 0, USTRBUFSIZ, buffer);
             lequal((int) ucslen(EXPECT[i].expect) + 1, result);
             lsequal(ucs2cstr(EXPECT[i].expect), ucs2cstr(buffer));
@@ -225,8 +240,6 @@ static void string_from_utf8() {
 static void string_from_utf16() {
     char32_t buffer[USTRBUFSIZ];
 
-    memset(buffer, 0, sizeof(buffer));
-
     for (int i = 0; i < EXPECTSZ; i++) {
         const C_Ustring* s = NULL;
         const char16_t* jstr = ucs2utf16(EXPECT[i].expect);
@@ -236,6 +249,8 @@ static void string_from_utf16() {
         lok(s != NULL);
 
         if (s) {
+            memset(buffer, 0, sizeof(buffer));
+
             int result = (int)C_Ustring_to_utf32(s, 0, USTRBUFSIZ, buffer);
             lequal((int) ucslen(EXPECT[i].expect) + 1, result);
             lsequal(ucs2cstr(EXPECT[i].expect), ucs2cstr(buffer));
@@ -249,8 +264,6 @@ static void string_from_utf16() {
 static void string_from_utf32() {
     char32_t buffer[USTRBUFSIZ];
 
-    memset(buffer, 0, sizeof(buffer));
-
     for (int i = 0; i < EXPECTSZ; i++) {
         const C_Ustring* s = NULL;
         const char32_t* ustr = EXPECT[i].expect;
@@ -260,6 +273,8 @@ static void string_from_utf32() {
         lok(s != NULL);
 
         if (s) {
+            memset(buffer, 0, sizeof(buffer));
+
             int result = (int)C_Ustring_to_utf32(s, 0, USTRBUFSIZ, buffer);
             lequal((int) ucslen(EXPECT[i].expect) + 1, result);
             lsequal(ucs2cstr(EXPECT[i].expect), ucs2cstr(buffer));
@@ -273,11 +288,6 @@ static void string_from_utf32() {
 static void string_from_charset() {
     char32_t buffer[USTRBUFSIZ];
 
-    memset(buffer, 0, sizeof(buffer));
-    for (int i = 0; i < USTRBUFSIZ; i++) {
-        buffer[i] = U'!';
-    }
-
     for (int i = 0; i < EXPECTSZ; i++) {
         const C_Ustring* s = NULL;
         const char* cs = EXPECT[i].charset;
@@ -290,7 +300,12 @@ static void string_from_charset() {
         lok(s != NULL);
 
         if (s) {
-            lequal(explen+1, (int)C_Ustring_to_utf32(s, 0, USTRBUFSIZ, buffer));
+            memset(buffer, 0, sizeof(buffer));
+
+            ssize_t result =
+                C_Ustring_to_utf32(s, 0, USTRBUFSIZ, buffer);
+
+            lequal(explen+1, (int)result);
             lsequal(ucs2cstr(expstr), ucs2cstr(buffer));
         }
         lok(C_Ustring_release(&s));
@@ -301,8 +316,6 @@ static void string_from_charset() {
 
 static void string_to_utf8() {
     char8_t buffer[STRBUFSIZ];
-
-    memset(buffer, 0, sizeof(buffer));
 
     for (int i = 0; i < EXPECTSZ; i++) {
         const char32_t* ustr = EXPECT[i].expect;
@@ -315,9 +328,65 @@ static void string_to_utf8() {
         lok(s != NULL);
 
         if (s) {
+            memset(buffer, 0, sizeof(buffer));
+
             size_t result = C_Ustring_to_utf8(s, 0, STRBUFSIZ, buffer);
             lequal(explen + 1, (int) result);
             lsequal(expstr, (const char*)buffer);
+        }
+        lok(C_Ustring_release(&s));
+    }
+
+    free_strings();
+}
+
+static void string_to_utf16() {
+    char16_t buffer[JSTRBUFSIZ];
+
+    for (int i = 0; i < EXPECTSZ; i++) {
+        const char32_t* ustr = EXPECT[i].expect;
+        const int ulen = ucslen(ustr);
+        const char16_t* expstr = ucs2utf16(ustr);
+        const int explen = jstrlen(expstr) * sizeof(char16_t);
+        const C_Ustring* s = NULL;
+
+        lok(C_Ustring_new_utf32(&s, ulen, ustr));
+        lok(s != NULL);
+
+        if (s) {
+            memset(buffer, 0, sizeof(buffer));
+
+            size_t result = 
+                    C_Ustring_to_charset(s, UTF_16, 0, JSTRBUFSIZ, (octet_t*)buffer);
+            lequal(explen + 2, (int)result);
+            lsequal(jstr2cstr(expstr), jstr2cstr(buffer));
+        }
+        lok(C_Ustring_release(&s));
+    }
+
+    free_strings();
+}
+
+static void string_to_utf32() {
+    char32_t buffer[USTRBUFSIZ];
+
+    memset(buffer, 0, sizeof(buffer));
+
+    for (int i = 0; i < EXPECTSZ; i++) {
+        const char32_t* ustr = EXPECT[i].expect;
+        const int ulen = ucslen(ustr);
+        const char32_t* expstr = ustr;
+        const int explen = ulen * sizeof(char32_t);
+        const C_Ustring* s = NULL;
+
+        lok(C_Ustring_new_utf32(&s, ulen, ustr));
+        lok(s != NULL);
+
+        if (s) {
+            size_t result = 
+                    C_Ustring_to_charset(s, UTF_32, 0, USTRBUFSIZ, (octet_t*)buffer);
+            lequal(explen + 4, (int)result);
+            lsequal(ucs2cstr(expstr), ucs2cstr(buffer));
         }
         lok(C_Ustring_release(&s));
     }
@@ -389,6 +458,8 @@ static void string_equals() {
 /*
  * TODO: test:
  *
+USTR_API bool C_Ustring_new_ascii(const C_Ustring* *sp, size_t sz, const char* buf);
+
 USTR_API bool C_Ustring_slice(const C_Ustring* *sp, const C_Ustring* s, int first, int last);
 USTR_API bool C_Ustring_slice_from(const C_Ustring* *sp, const C_Ustring* s, int first);
 USTR_API bool C_Ustring_slice_to(const C_Ustring* *sp, const C_Ustring* s, int last);
@@ -405,6 +476,8 @@ int main (int argc, char* argv[]) {
     lrun("string_from_utf32", string_from_utf32);
     lrun("string_from_charset", string_from_charset);
     lrun("string_to_utf8", string_to_utf8);
+    lrun("string_to_utf16", string_to_utf16);
+    lrun("string_to_utf32", string_to_utf32);
     lrun("string_to_charset", string_to_charset);
     lrun("string_equals", string_equals);
     lresults();

@@ -50,7 +50,7 @@ struct _C_Ustring {
         } c;
         struct _string16 {
             size_t    len;
-            char16_t   arr[];
+            char32_t   arr[];
         } u;
         struct _string32 {
             size_t    len;
@@ -71,29 +71,96 @@ static uint64_t hashcode(char32_t* buf, size_t len) {
     return result;
 }
 
-// TODO: Implement compressed strings, i.e. use arrays of char16_t 
+
+static bool is_utf16(const char* charset) {
+    /* TODO: Add all the various aliases */
+    return strcmp(charset, UTF_16) == 0;
+}
+
+static bool is_utf32(const char* charset) {
+    /* TODO: Add all the various aliases */
+    return strcmp(charset, UTF_32) == 0;
+}
+
+static void check_byte_order_mark_32bit(char32_t *buf, size_t length) {
+    if (buf == NULL || length < 1) {
+        return;
+    }
+    switch (buf[0]) {
+    case 0xfffe0000:
+        for (int i = 0; i < length; i++) {
+            char32_t cp = buf[i];
+            buf[i] = ((cp & 0xFF000000) >> 24)
+                        | ((cp & 0x00FF0000) >> 8)
+                        | ((cp & 0x0000FF00) << 8)
+                        | ((cp & 0x000000FF) << 24);
+        }
+        break;
+    case 0x0000feff:
+        /* do nothing */
+        break;
+    }
+}
+
+static void check_byte_order_mark_16bit(char16_t *buf, size_t length) {
+    if (buf == NULL || length < 1) {
+        return;
+    }
+    switch (buf[0]) {
+    case 0xfffe:
+        for (int i = 0; i < length; i++) {
+            char16_t cp = buf[i];
+            buf[i] = ((cp & 0xFF00) >> 8) | ((cp & 0x00FF) << 8);
+        }
+        break;
+    case 0xfeff:
+        /* do nothing */
+        break;
+    }
+}
+
+
+// TODO: Implement compressed strings, i.e. use arrays of char32_t 
 // or char8_t where the characters fit entirely into UCS-2 (sans surrogates),
-// Latin-1, or ASCII.  See Java 9 java.lang.String for inspiration.
+// Latin-1, or ASCII.  See Java 9 jamingw-w64-ucrt-x86_64-libiconvva.lang.String for inspiration.
 
 static const C_Ustring* make_utf32_string(const char* charset, size_t insz, const octet_t* inbuf) {
-    C_Ustring* s;
+    C_Ustring* s = NULL;
     ssize_t read, written, offset;
     size_t ulen, usiz;
     size_t bufsz = insz+2;
     char32_t buffer[bufsz];
 
-    written = C_Conv_transcode(charset, UTF_32, 
+    if (is_utf32(charset)) {
+        memset(buffer, 0, bufsz * sizeof(char32_t));
+        memcpy(buffer, inbuf, insz);
+        read = insz;
+        written = insz;
+        offset = 0;
+    } else if (is_utf16(charset)) {
+        written = C_Conv_char16_to_32(insz/sizeof(char16_t),
+                                        (const char16_t *)inbuf,
+                                        bufsz,
+                                        buffer);
+        written *= sizeof(char32_t);
+        read = insz;
+        offset = 0;
+    } else {
+        written = C_Conv_transcode(charset, UTF_32, 
                                     insz, 
                                     (octet_t*)inbuf, 
                                     bufsz * sizeof(char32_t), 
                                     (octet_t*)buffer, 
                                     &read);
-    if (read != insz) goto error;
+        if (read != insz) goto error;
     
-    if (buffer[0] == L'\uFEFF') {
-        offset = 1;
-    } else {
-        offset = 0;
+        check_byte_order_mark_32bit(buffer, written / sizeof(char32_t));
+
+        if (buffer[0] == 0x0000FEFF) {
+            offset = 1;
+        } else {
+            offset = 0;
+        }
     }
 
     ulen = (written-offset)/sizeof(char32_t);
@@ -116,7 +183,7 @@ static const C_Ustring* make_utf32_string(const char* charset, size_t insz, cons
         case sizeof(char16_t):
             s->type = STRING_UCS_2;
             for (int i = 0; i < ulen; i++) {
-                s->s.u.arr[i] = (char16_t)buffer[offset+i];
+                s->s.u.arr[i] = (char32_t)buffer[offset+i];
             }
             s->s.u.arr[ulen] = 0;
             s->s.u.len = ulen;
@@ -221,7 +288,7 @@ FMC_API uint64_t C_Ustring_hashcode(const C_Ustring* s) {
 
 FMC_API char32_t C_Ustring_char_at(const C_Ustring* s, size_t i) {
     if (i >= C_Ustring_length(s)) {
-        return L'\0';
+        return U'\0';
     }
     switch (s->type) {
         case STRING_LATIN_1:
@@ -231,7 +298,7 @@ FMC_API char32_t C_Ustring_char_at(const C_Ustring* s, size_t i) {
         case STRING_UCS_4:
             return s->s.w.arr[i];
         default:
-            return L'\0';
+            return U'\0';
     }
 }
 
@@ -271,12 +338,12 @@ static size_t latin1_to_8(size_t insz, const octet_t* inbuf, size_t outsz, char8
 FMC_API size_t C_Ustring_to_utf8(const C_Ustring* s, size_t offset, size_t max, char8_t* buf) {
      switch (s->type) {
         case STRING_EMPTY:
-            buf[offset] = L'\0';
+            buf[offset] = U'\0';
             return 1;
         case STRING_LATIN_1:
             return latin1_to_8(s->s.c.len+1, s->s.c.arr, max, buf+offset);
         case STRING_UCS_2:
-            return C_Conv_char16_to_8(s->s.u.len+1, s->s.u.arr, max, buf+offset);
+            return C_Conv_char32_to_8(s->s.u.len+1, s->s.u.arr, max, buf+offset);
         case STRING_UCS_4:
             return C_Conv_char32_to_8(s->s.w.len+1, s->s.w.arr, max, buf+offset);
     }
@@ -313,8 +380,8 @@ FMC_API ssize_t C_Ustring_to_charset(const C_Ustring* s, const char* charset, si
             inbuf = (octet_t*)s->s.c.arr;
             break;
         case STRING_UCS_2:
-            incs = UTF_16;
-            insz = (s->s.u.len + 1) * sizeof(char16_t);
+            incs = UTF_32;
+            insz = (s->s.u.len + 1) * sizeof(char32_t);
             inbuf = (octet_t*)s->s.u.arr;
             break;
         case STRING_UCS_4:
@@ -329,7 +396,29 @@ FMC_API ssize_t C_Ustring_to_charset(const C_Ustring* s, const char* charset, si
             break;
     }
 
-    return C_Conv_transcode(incs, charset, insz, inbuf, max, buf+offset, NULL);
+    ssize_t written = C_Conv_transcode(incs, charset, insz, inbuf, max, buf+offset, NULL);
+    if (is_utf32(charset)) {
+        char32_t* ubuf = (char32_t*)buf+offset;
+        size_t ulen = written / sizeof(char32_t);
+
+        check_byte_order_mark_32bit(ubuf, ulen);
+
+        if (ubuf[0] == U'\ufeff') {
+            memmove(buf+offset, buf+offset+sizeof(char32_t), written-sizeof(char32_t));
+            written -= sizeof(char32_t);
+        }
+    } else if (is_utf16(charset)) {
+        char16_t* jbuf = (char16_t*)buf+offset;
+        size_t jlen = written / sizeof(char16_t);
+
+        check_byte_order_mark_16bit(jbuf, jlen);
+
+        if (jbuf[0] == u'\ufeff') {
+            memmove(buf+offset, buf+offset+sizeof(char16_t), written-sizeof(char16_t));
+            written -= sizeof(char16_t);
+        }
+    }
+    return written;
 }
 
 FMC_API bool C_Ustring_slice(const C_Ustring* *sp, const C_Ustring* s, ssize_t first, ssize_t last) {

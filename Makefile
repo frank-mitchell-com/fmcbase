@@ -17,7 +17,7 @@ SHLIB=$(SRCDIR)/lib$(LIBNAME).so
 
 CFLAGS=-g -Wall -fPIC
 IFLAGS= -I $(SRCDIR) -I $(TESTDIR)
-LFLAGS=-L$(SRCDIR) -l$(LIBNAME) -lm
+LFLAGS=-L$(SRCDIR) -l$(LIBNAME) -liconv -lm
 
 HEADERS=$(wildcard $(SRCDIR)/*.h)
 OBJECTS=$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/*.c))
