@@ -3,6 +3,9 @@
 CC=gcc
 #CC=clang
 
+LICONV=
+#LICONV=-liconv
+
 LIBNAME=fmcbase
 
 SRCDIR=.
@@ -17,7 +20,7 @@ SHLIB=$(SRCDIR)/lib$(LIBNAME).so
 
 CFLAGS=-g -Wall -fPIC
 IFLAGS= -I $(SRCDIR) -I $(TESTDIR)
-LFLAGS=-L$(SRCDIR) -l$(LIBNAME) -liconv -lm
+LFLAGS=-L$(SRCDIR) -l$(LIBNAME) $(LICONV) -lm
 
 HEADERS=$(wildcard $(SRCDIR)/*.h)
 OBJECTS=$(patsubst %.c,%.o,$(wildcard $(SRCDIR)/*.c))
