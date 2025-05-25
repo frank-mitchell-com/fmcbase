@@ -23,7 +23,7 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "thread.h"
+#include "cthread.h"
 #include "table.h"
 #include "refset.h"
 #include "reftable.h"

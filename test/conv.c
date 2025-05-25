@@ -28,7 +28,7 @@
 #include "minctest.h"
 #include "convert.h"
 
-#define STRBUFSIZ  512 
+#define STRBUFSIZ  512
 
 typedef struct linkedlist {
     struct linkedlist* tail;
@@ -55,7 +55,7 @@ static int append_ascii(unsigned int c, char buf[], int j) {
         buf[j] = (char)c;
         len += 1;
     } else {
-        sprintf(&(buf[len]), "\\u{%x}", c); 
+        sprintf(&(buf[len]), "\\u{%x}", c);
         len = strlen(buf);
     }
     return len;
@@ -201,7 +201,8 @@ static void conv_smoke() {
         utf32 = "UTF-32LE";
     }
 
-    nwrit = C_Conv_transcode("UTF-8", utf32, insz, inbuf, outsz, outbuf, &nread);
+    nwrit = C_Conv_transcode("UTF-8", utf32, insz, inbuf, outsz, outbuf,
+                             &nread);
     errcode = errno;
 
     lequal(0, errcode);
@@ -215,12 +216,12 @@ static void conv_smoke() {
 
 static void conv_char8_to_32() {
     // Characters taken from Wikipedia article on UTF-8.
-    char* inbuf = 
+    char* inbuf =
         "$ \xC2\xA3 \xD0\x98 \xE0\xA4\xB9 \xE2\x82\xAC \xED\x95\x9C \xF0\x90\x8D\x88";
     size_t insz = strlen(inbuf);
-    const char32_t expect[] = { 
-        L'$',       L' ', 0x000000A3, L' ', 0x00000418, L' ', 
-        0x00000939, L' ', 0x000020AC, L' ', 0x0000D55C, L' ', 
+    const char32_t expect[] = {
+        U'$',       U' ', 0x000000A3, U' ', 0x00000418, U' ',
+        0x00000939, U' ', 0x000020AC, U' ', 0x0000D55C, U' ',
         0x00010348, 0x0,  0x0,        0x0,  0x0,        0x0 };
     ssize_t result = 0;
     int errcode;
@@ -242,11 +243,11 @@ static void conv_char8_to_32() {
 
 static void conv_char32_to_8() {
     // Characters taken from Wikipedia article on UTF-8.
-    char* expect = 
+    char* expect =
         "$ \xC2\xA3 \xD0\x98 \xE0\xA4\xB9 \xE2\x82\xAC \xED\x95\x9C \xF0\x90\x8D\x88";
-    const char32_t inbuf[] = { 
-        L'$',       L' ', 0x000000A3, L' ', 0x00000418, L' ', 
-        0x00000939, L' ', 0x000020AC, L' ', 0x0000D55C, L' ', 
+    const char32_t inbuf[] = {
+        U'$',       U' ', 0x000000A3, U' ', 0x00000418, U' ',
+        0x00000939, U' ', 0x000020AC, U' ', 0x0000D55C, U' ',
         0x00010348, 0x0,  0x0,        0x0,  0x0,        0x0 };
     const size_t insz = ucslen(inbuf);
     char outbuf[STRBUFSIZ];
@@ -267,12 +268,12 @@ static void conv_char32_to_8() {
 
 static void conv_char8_to_16() {
     // Characters taken from Wikipedia article on UTF-8.
-    char* inbuf = 
+    char* inbuf =
         "$ \xC2\xA3 \xD0\x98 \xE0\xA4\xB9 \xE2\x82\xAC \xED\x95\x9C \xF0\x90\x8D\x88";
     size_t insz = strlen(inbuf);
-    const char16_t expect[] = { 
-        L'$',   L' ',   0x00A3, L' ', 0x0418, L' ', 
-        0x0939, L' ',   0x20AC, L' ', 0xD55C, L' ', 
+    const char16_t expect[] = {
+        u'$',   u' ',   0x00A3, u' ', 0x0418, u' ',
+        0x0939, u' ',   0x20AC, u' ', 0xD55C, u' ',
         0xD800, 0xDF48, 0x0,    0x0,  0x0,    0x0 };
     const int expectsz = 14;
     ssize_t result = 0;
@@ -294,11 +295,11 @@ static void conv_char8_to_16() {
 
 static void conv_char16_to_8() {
     // Characters taken from Wikipedia article on UTF-8.
-    char* expect = 
+    char* expect =
         "$ \xC2\xA3 \xD0\x98 \xE0\xA4\xB9 \xE2\x82\xAC \xED\x95\x9C \xF0\x90\x8D\x88";
-    const char16_t inbuf[] = { 
-        L'$',   L' ',   0x00A3, L' ', 0x0418, L' ', 
-        0x0939, L' ',   0x20AC, L' ', 0xD55C, L' ', 
+    const char16_t inbuf[] = {
+        u'$',   u' ',   0x00A3, u' ', 0x0418, u' ',
+        0x0939, u' ',   0x20AC, u' ', 0xD55C, u' ',
         0xD800, 0xDF48, 0x0,    0x0,  0x0,    0x0 };
     const size_t insz = jcslen(inbuf);
     char outbuf[STRBUFSIZ];
@@ -319,14 +320,14 @@ static void conv_char16_to_8() {
 }
 
 static void conv_char32_to_16() {
-    const char32_t inbuf[] = { 
-        L'$',       L' ', 0x000000A3, L' ', 0x00000418, L' ', 
-        0x00000939, L' ', 0x000020AC, L' ', 0x0000D55C, L' ', 
+    const char32_t inbuf[] = {
+        U'$',       U' ', 0x000000A3, U' ', 0x00000418, U' ',
+        0x00000939, U' ', 0x000020AC, U' ', 0x0000D55C, U' ',
         0x00010348, 0x0,  0x0,        0x0,  0x0,        0x0 };
     const int insz = 13;
-    const char16_t expect[] = { 
-        L'$',   L' ',   0x00A3, L' ', 0x0418, L' ', 
-        0x0939, L' ',   0x20AC, L' ', 0xD55C, L' ', 
+    const char16_t expect[] = {
+        u'$',   u' ',   0x00A3, u' ', 0x0418, u' ',
+        0x0939, u' ',   0x20AC, u' ', 0xD55C, u' ',
         0xD800, 0xDF48, 0x0,    0x0,  0x0,    0x0 };
     const int expectsz = 14;
     char16_t outbuf[STRBUFSIZ/2];
@@ -347,14 +348,14 @@ static void conv_char32_to_16() {
 }
 
 static void conv_char16_to_32() {
-    const char32_t expect[] = { 
-        L'$',       L' ', 0x000000A3, L' ', 0x00000418, L' ', 
-        0x00000939, L' ', 0x000020AC, L' ', 0x0000D55C, L' ', 
+    const char32_t expect[] = {
+        U'$',       U' ', 0x000000A3, U' ', 0x00000418, U' ',
+        0x00000939, U' ', 0x000020AC, U' ', 0x0000D55C, U' ',
         0x00010348, 0x0,  0x0,        0x0,  0x0,        0x0 };
     const int expectsz = 13;
-    const char16_t inbuf[] = { 
-        L'$',   L' ',   0x00A3, L' ', 0x0418, L' ', 
-        0x0939, L' ',   0x20AC, L' ', 0xD55C, L' ', 
+    const char16_t inbuf[] = {
+        u'$',   u' ',   0x00A3, u' ', 0x0418, u' ',
+        0x0939, u' ',   0x20AC, u' ', 0xD55C, u' ',
         0xD800, 0xDF48, 0x0,    0x0,  0x0,    0x0 };
     const int insz = 14;
     char32_t outbuf[STRBUFSIZ/4];
@@ -389,7 +390,7 @@ static void conv_is_ascii() {
     lequal(false, C_Conv_is_ascii(strlen(test2), test2));
 }
 
-static char32_t PLANE_1_STRING[] = { 
+static char32_t PLANE_1_STRING[] = {
     'P', 'l', 'a', 'n', 'e', ' ', '1', ':', ' ', 0x10348, '!', 0x0
 };
 

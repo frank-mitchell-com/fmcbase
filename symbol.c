@@ -26,7 +26,7 @@
 #include "refcount.h"
 #include "refset.h"
 #include "strtable.h"
-#include "thread.h"
+#include "cthread.h"
 
 #include "symbol.h"
 

@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include "thread.h"
 #include "convert.h"
 #include "refcount.h"
 #include "ustring.h"
