@@ -48,7 +48,7 @@ FMC_API void C_Ref_Set_new(C_Ref_Set* *tptr, size_t minsz);
 FMC_API size_t C_Ref_Set_size(C_Ref_Set* t);
 
 /**
- * Adds a deep copy of `value` into a new entry for `key` if none exists.
+ * Adds a new entry for `key` if none exists.
  * Returns false and does nothing if an entry for `key` already exists.
  */
 FMC_API bool C_Ref_Set_add(C_Ref_Set* t, const void* key);
