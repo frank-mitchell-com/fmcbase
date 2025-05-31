@@ -4,7 +4,7 @@
 
 - `C_Port`: portable I/O wrapper.
 
-- `C_Xalloc`: customizable allocator in `C_Wstring`.
+- `C_Xalloc`: customizable allocator in `C_Ustring`.
 
 ## PENDING IMPLEMENTATION
 
@@ -24,12 +24,12 @@
 - `C_Table`
    - collision metrics
 
-- `C_Wstring`
+- `C_Ustring`
    - slice...
         - negative indices
    - join...
 
-- `C_Wchar_Buffer`
+- `C_Uchar_Buffer`
    - all functions
    - reference counting (`C_Ref_Count`)
 
@@ -37,12 +37,22 @@
 
 ### Functionality
 
+- `Cthreads`
+   - verify macros compile and work
+   - build a test program with them
+   - can we disable them for single threaded? (no)
+   - should this maybe be an emulation library?
+
 - `C_Table`
    - custom hash function
    - custom equal, copy, delete
    - look for memory leaks
 
-- `C_Wstring`
+- `C_Uchar_Buffer`
+   - all functions
+   - reference counting (`C_Ref_Count`)
+
+- `C_Ustring`
    - all unimplemented
    - new-ascii 
         - ascii
@@ -57,10 +67,10 @@
 - Proper mutex usage (no deadlocks or corrupted data)
   - Update `C_Ref_Count` simultaneously in multiple threads.
   - Create multiple `C_Symbol`s in multiple threads.
-  - Allocate `C_Wstring`s in multiple threads.
-  - Get the same non-UTF `C_Wstring`'s UTF data in multiple threads.
-  - Thread safety of `C_Wchar_Buffer`?
-  - Thread safety of `C_Wstring_Array`?
+  - Allocate `C_Ustring`s in multiple threads.
+  - Get the same non-UTF `C_Ustring`'s UTF data in multiple threads.
+  - Thread safety of `C_Uchar_Buffer`?
+  - Thread safety of `C_Ustring_Array`?
 
 ### Performance
 
@@ -82,6 +92,7 @@
 - Other Thread Libraries (compilation switches)
   - single threaded
   - Windows Threads
+  - [OpenMP](https://www.openmp.org/)
   - Netscape Common Runtime
   - Apache Common Runtime
 
