@@ -36,6 +36,14 @@
 #define LOCK_RELEASE(x)     pthread_mutex_unlock(&(x))
 #define LOCK_FREE(x)        pthread_mutex_destroy(&(x))
 
+#define COND_DECL(x)        pthread_cond_t(x) = PTHREAD_COND_INITIALIZER
+#define COND_TYPE(x)        pthread_cond_t(x)
+#define COND_INIT(x)        pthread_cond_init(&(x), NULL)
+#define COND_WAIT(x, m)     pthread_cond_wait(&(x), &(m))
+#define COND_SIGNAL(x)      pthread_cond_signal(&(x))
+#define COND_SIGNAL_ALL(x)  pthread_cond_broadcast(&(x));
+#define COND_FREE(x)        pthread_cond_destroy(&(x))
+
 #define RWLOCK_DECL(x)      pthread_rwlock_t (x) = PTHREAD_RWLOCK_INITIALIZER
 #define RWLOCK_TYPE(x)      pthread_rwlock_t (x)
 #define RWLOCK_INIT(x)      pthread_rwlock_init(&(x), NULL)
