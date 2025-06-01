@@ -41,7 +41,28 @@ make
 The default target builds a static library and runs unit tests.
 As of this writing I've yet to test the "install" target.
 
-I've only built this on my Linux system so far.  Please let me know (or send
-me a patch!) if you need to modify the code for other systems, e.g. Windows,
-Mac, another Unix, or embedded systems (?!?).
+On some platforms `libiconv.*` is part of the standard libraries; on others
+it's a separate library. If the code won't complile because it's looking for
+iconv, edit the Makefile like so:
 
+```makefile
+diff --git a/Makefile b/Makefile
+index 8127f22..e6f1ba9 100644
+--- a/Makefile
++++ b/Makefile
+@@ -3,8 +3,8 @@
+ CC=gcc
+ #CC=clang
+ 
+-LICONV=
+-#LICONV=-liconv
++#LICONV=
++LICONV=-liconv
+ 
+ LIBNAME=fmcbase
+ 
+```
+
+I've only built this on Linux Mint and UCRT64 / MSYS2 (Windows 10) so far.
+Please let me know (or send me a patch!) if you need to modify the code for
+other systems, e.g. Windows MVSC, Mac, another Unix, or embedded systems (?!?).
