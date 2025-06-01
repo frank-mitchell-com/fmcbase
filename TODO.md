@@ -58,6 +58,13 @@
         - ascii
         - non-ascii (locale?)
 
+- `C_Ref_Count`
+   - When is the object itself actually freed?
+   - Will this deadlock when the released object releases its
+     own dependents?
+   - Prefer "cleaners" (which hold state that needs cleaning up)
+     to "finalizers" (which hold onto the object).
+
 ### Robustness
 
 - Error codes in error conditions
