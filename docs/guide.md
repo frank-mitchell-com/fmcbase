@@ -137,7 +137,7 @@ redefine the macros to use Win32 locking functions.
 
 ## Other Files
 
-- **libctable.dox**: a [Doxygen](https://www.doxygen.nl/) configuration file 
+- **Doxyfile**: a [Doxygen](https://www.doxygen.nl/) configuration file 
   for HTML documentation.
 
 - **Makefile**: a basic GNU `make` file 

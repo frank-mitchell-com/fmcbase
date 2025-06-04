@@ -43,23 +43,18 @@ As of this writing I've yet to test the "install" target.
 
 On some platforms `libiconv.*` is part of the standard libraries; on others
 it's a separate library. If the code won't complile because it's looking for
-iconv, edit the Makefile like so:
+iconv, edit the Makefile from this:
 
 ```makefile
-diff --git a/Makefile b/Makefile
-index 8127f22..e6f1ba9 100644
---- a/Makefile
-+++ b/Makefile
-@@ -3,8 +3,8 @@
- CC=gcc
- #CC=clang
- 
--LICONV=
--#LICONV=-liconv
-+#LICONV=
-+LICONV=-liconv
- 
- LIBNAME=fmcbase
+LICONV=
+#LICONV=-liconv
+```
+
+to this:
+
+```makefile
+# LICONV=
+LICONV=-liconv
  
 ```
 
