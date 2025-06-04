@@ -59,9 +59,6 @@
         - non-ascii (locale?)
 
 - `C_Ref_Count`
-   - When is the object itself actually freed?
-     When the on-zero function is called.
-     So rename it from `C_Ref_Count_on_zero` to `C_Ref_Count_on_free`.
    - Will this deadlock when the released object releases its
      own dependents?
    - Add "cleaners" (which hold state that needs cleaning up).

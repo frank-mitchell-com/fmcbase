@@ -127,7 +127,7 @@ static C_Symbol* symbol_alloc_init(size_t len, const uint8_t* uptr) {
     C_Ref_Set_add(symbol_ref_set(), result);
     C_Ref_Count_list(result);
     if (!result->tenured) {
-        C_Ref_Count_on_zero(result, free_symbol_ext);
+        C_Ref_Count_on_free(result, free_symbol_ext);
     }
 
     return result;

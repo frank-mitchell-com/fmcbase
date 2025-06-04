@@ -58,7 +58,7 @@ static void alloc_init(C_Uchar_Buffer* *newref, size_t n) {
     wcb->length = 0;
 
     C_Ref_Count_list(wcb);
-    C_Ref_Count_on_zero(wcb, free_buffer);
+    C_Ref_Count_on_free(wcb, free_buffer);
 
     *newref = wcb;
     return;

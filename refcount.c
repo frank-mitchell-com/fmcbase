@@ -36,7 +36,7 @@ static LOCK_DECL(_table_lock);
 static C_Ref_Table* _reftable = NULL;
 static C_Ref_Set*   _reflist  = NULL;
 static C_Ref_Set*   _zeroset  = NULL;
-static C_Ref_Table* _onzero   = NULL;
+static C_Ref_Table* _onfree   = NULL;
 
 typedef struct C_Ref_Record {
     LOCK_TYPE(lock);
@@ -67,11 +67,11 @@ static C_Ref_Set* zeroset() {
     return _zeroset;
 }
 
-static C_Ref_Table* onzerotbl() {
-    if (!_onzero) {
-        C_Ref_Table_new(&_onzero, 11);
+static C_Ref_Table* onfreetbl() {
+    if (!_onfree) {
+        C_Ref_Table_new(&_onfree, 11);
     }
-    return _onzero;
+    return _onfree;
 }
 
 static C_Ref_Record* record(const void* obj) {
@@ -143,7 +143,7 @@ FMC_API uint32_t C_Ref_Count_refcount(const void* obj) {
 FMC_API uint32_t C_Ref_Count_decrement(const void* obj) {
     uint32_t result;
     C_Ref_Record* rec = NULL;
-    C_On_Zero_Fcn onzero = NULL;
+    C_On_Free_Fcn onfree = NULL;
 
     LOCK_ACQUIRE(_table_lock);
 
@@ -153,14 +153,14 @@ FMC_API uint32_t C_Ref_Count_decrement(const void* obj) {
         C_Ref_Set_add(zeroset(), obj);
         result = 0;
 
-        onzero = (C_On_Zero_Fcn)C_Ref_Table_get(onzerotbl(), obj);
+        onfree = (C_On_Free_Fcn)C_Ref_Table_get(onfreetbl(), obj);
     }
 
     LOCK_RELEASE(_table_lock);
 
-    if (onzero) {
+    if (onfree) {
         C_Ref_Count_delist(obj);
-        onzero((void *)obj);
+        onfree((void *)obj);
     }
 
     if (rec != NULL) {
@@ -258,7 +258,7 @@ FMC_API void C_Ref_Count_delist(const void* obj) {
 
     C_Ref_Set_remove(reflist(), obj);
     C_Ref_Set_remove(zeroset(), obj);
-    C_Ref_Table_remove(onzerotbl(), obj, NULL);
+    C_Ref_Table_remove(onfreetbl(), obj, NULL);
 
     rec = record(obj);
 
@@ -279,9 +279,9 @@ FMC_API void C_Ref_Count_delist(const void* obj) {
     }
 }
 
-FMC_API void C_Ref_Count_on_zero(const void* p, C_On_Zero_Fcn onzero) {
+FMC_API void C_Ref_Count_on_free(const void* p, C_On_Free_Fcn onfree) {
     LOCK_ACQUIRE(_table_lock);
-    C_Ref_Table_put(onzerotbl(), p, onzero, NULL);
+    C_Ref_Table_put(onfreetbl(), p, onfree, NULL);
     LOCK_RELEASE(_table_lock);
 }
 

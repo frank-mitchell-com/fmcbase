@@ -217,7 +217,7 @@ static bool make_string(const C_Ustring* *sp, const char* charset, size_t len, s
     *sp = make_utf32_string(charset, len * csz, buf);
     if (*sp != NULL) {
         C_Ref_Count_list(*sp);
-        C_Ref_Count_on_zero(*sp, free_string);
+        C_Ref_Count_on_free(*sp, free_string);
         return true;
     }
     return false;

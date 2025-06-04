@@ -25,7 +25,7 @@
 
 #include "common.h"
 
-typedef void (*C_On_Zero_Fcn)(void*);
+typedef void (*C_On_Free_Fcn)(void*);
 
 /**
  * The current reference count for `p`.
@@ -66,10 +66,10 @@ FMC_API void C_Ref_Count_list(const void* p);
 FMC_API void C_Ref_Count_delist(const void* p);
 
 /**
- * Register callback `onzero` for `p` when `p`'s reference count reaches 0.
+ * Register callback `onfree` for `p` when `p`'s reference count reaches 0.
  * Usually used to free `p`.  Automatically delists `p` before it's called.
  */
-FMC_API void C_Ref_Count_on_zero(const void* p, C_On_Zero_Fcn onzero);
+FMC_API void C_Ref_Count_on_free(const void* p, C_On_Free_Fcn onfree);
 
 /**
  * If `p` is listed, increment its reference count and return it.

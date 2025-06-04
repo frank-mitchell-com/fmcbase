@@ -130,35 +130,36 @@ static void refcnt_retain() {
     free(tobj);
 }
 
-static const void* _onzero_expect = NULL;
-static bool        _onzero_called = false;
+static const void* _onfree_expect = NULL;
+static bool        _onfree_called = false;
 
-static void test_onzero(void* p) {
-    _onzero_called = true;
-    lok(_onzero_expect == p);
+static void test_onfree(void* p) {
+    _onfree_called = true;
+    lok(_onfree_expect == p);
 }
 
-static void refcnt_onzero() {
+static void refcnt_onfree() {
     char* tobj  = strdup("this is only a test");
 
     C_Ref_Count_list(tobj);
     lequal(true, C_Ref_Count_is_listed(tobj));
 
-    C_Ref_Count_on_zero(tobj, &test_onzero);
+    C_Ref_Count_on_free(tobj, &test_onfree);
 
-    _onzero_called = false;
-    _onzero_expect = tobj;
+    _onfree_called = false;
+    _onfree_expect = tobj;
     C_Ref_Count_decrement(tobj);
 
-    lok(_onzero_called);
+    lok(_onfree_called);
     lequal(false, C_Ref_Count_is_listed(tobj));
     lequal(1, C_Ref_Count_refcount(tobj));
+    free(tobj);
 }
 
 int main (int argc, char* argv[]) {
     lrun("refcnt_count", refcnt_count);
     lrun("refcnt_list", refcnt_count);
-    lrun("refcnt_onzero", refcnt_onzero);
+    lrun("refcnt_onfree", refcnt_onfree);
     lrun("refcnt_retain", refcnt_retain);
     lresults();
     return lfails != 0;
